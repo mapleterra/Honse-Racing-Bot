@@ -1,4 +1,4 @@
-# 🏇 Horse Racing Bot
+# 🏇 Honse Racing Bot
 
 A Discord bot for real-world horse racing analysis — live race coverage, G1/G2/G3 race countdowns, horse and jockey research, automatic race-day alerts, and result subscriptions, all in one place.
 
