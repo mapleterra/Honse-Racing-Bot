@@ -1,4 +1,4 @@
-# 🏇 Horse Racing Discord Bot
+# 🏇 Honse Racing Discord Bot
 
 A Discord bot that brings real-world horse racing data straight to your server — Grade 1, 2, and 3 race countdowns, race cards, live odds, official results, trainer and jockey stats, head-to-head comparisons (including retired and deceased horses), auto result notifications, and an Umamusume: Pretty Derby crossover feature.
 
@@ -132,65 +132,6 @@ The bot includes a built-in database of 21 characters from **Umamusume: Pretty D
 | Smart Falcon | 🏜️ Smart Falcon | Undefeated in dirt G1s — 7 for 7 |
 
 More characters can be added to `UMAMUSUME_DATA` in `bot.py` at any time — see the template in that file.
-
----
-
-## Setup
-
-### Requirements
-
-- Python 3.10 or higher
-- A Discord bot token from the [Discord Developer Portal](https://discord.com/developers/applications)
-
-### Install dependencies
-
-```bash
-pip install discord.py aiohttp beautifulsoup4 feedparser python-dotenv
-```
-
-### Configure
-
-Create a `.env` file in this folder:
-
-```
-DISCORD_BOT_TOKEN=your_token_here
-G1_ALERTS_CHANNEL_ID=your_channel_id_here
-RACE_UPDATES_CHANNEL_ID=your_channel_id_here
-```
-
-### Run
-
-```bash
-python bot.py
-```
-
-The bot is online while this command is running. Press `Ctrl + C` to stop it.
-
-> **After any update to bot.py:** stop the bot, replace the file, and restart it. New slash commands register automatically on startup — allow 1–2 minutes for Discord to show them.
-
----
-
-## Discord Developer Portal Settings
-
-In the [Developer Portal](https://discord.com/developers/applications), under your app's **Bot** page, make sure these are enabled:
-
-- ✅ **Server Members Intent**
-- ✅ **Message Content Intent**
-
----
-
-## Customising Images
-
-Near the top of `bot.py` you'll find dictionaries where you can add your own image URLs:
-
-- `RACE_IMAGES` — banner image shown on each race embed (works for G1, G2, and G3 races)
-- `HORSE_IMAGES` — profile photo for `/horse` and `/compare` embeds
-- `TRAINER_IMAGES` — photo for `/trainer` embeds
-- `JOCKEY_IMAGES` — photo for `/jockey` embeds
-- `BOT_BANNER_URL` — default fallback banner for all embeds
-- `UMAMUSUME_DATA` entries each have an `"icon_url"` field for character thumbnails
-
-See `GUIDE.md` for full instructions on finding and hosting image URLs for free.
 
 ---
 
