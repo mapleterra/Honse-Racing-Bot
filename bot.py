@@ -81,6 +81,18 @@ def _get_alerts_channels() -> list:
     return channels
 
 
+def _get_alerts_channels_by_guild() -> list[tuple[int, discord.TextChannel]]:
+    """Return (guild_id, TextChannel) pairs for every configured alerts channel."""
+    result = []
+    for guild_id, cfg in GUILD_CONFIG.items():
+        ch_id = cfg.get("alerts_channel")
+        if ch_id:
+            ch = bot.get_channel(int(ch_id))
+            if ch:
+                result.append((guild_id, ch))
+    return result
+
+
 def _get_news_channels() -> list:
     """Return every configured news TextChannel across all guilds."""
     channels = []
@@ -3613,10 +3625,17 @@ async def cmd_subscribe(
         )
         return
 
+    if interaction.guild is None:
+        await interaction.followup.send(
+            "Subscriptions must be used inside a server.", ephemeral=True
+        )
+        return
+
     uid = interaction.user.id
-    if race_key not in _race_subscriptions:
-        _race_subscriptions[race_key] = set()
-    _race_subscriptions[race_key].add(uid)
+    sub_key = (interaction.guild.id, race_key)
+    if sub_key not in _race_subscriptions:
+        _race_subscriptions[sub_key] = set()
+    _race_subscriptions[sub_key].add(uid)
 
     dt = race["date"]
     unix_ts = int(dt.timestamp())
@@ -3634,12 +3653,19 @@ async def cmd_subscribe(
 @app_commands.describe(name="Partial name of the G1 race to unsubscribe from")
 async def cmd_unsubscribe(interaction: discord.Interaction, name: str):
     await interaction.response.defer(ephemeral=True)
+    if interaction.guild is None:
+        await interaction.followup.send(
+            "Subscriptions must be used inside a server.", ephemeral=True
+        )
+        return
+
     query = name.lower()
     uid = interaction.user.id
+    guild_id = interaction.guild.id
     removed = []
 
-    for race_key, subs in _race_subscriptions.items():
-        if query in race_key.lower() and uid in subs:
+    for (gid, race_key), subs in list(_race_subscriptions.items()):
+        if gid == guild_id and query in race_key.lower() and uid in subs:
             subs.discard(uid)
             removed.append(race_key)
 
@@ -3658,9 +3684,18 @@ async def cmd_unsubscribe(interaction: discord.Interaction, name: str):
 @tree.command(name="mysubscriptions", description="See which G1 races you're subscribed to")
 async def cmd_mysubscriptions(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
+    if interaction.guild is None:
+        await interaction.followup.send(
+            "Subscriptions must be used inside a server.", ephemeral=True
+        )
+        return
+
     uid = interaction.user.id
+    guild_id = interaction.guild.id
     subscribed = [
-        race_key for race_key, subs in _race_subscriptions.items() if uid in subs
+        race_key
+        for (gid, race_key), subs in _race_subscriptions.items()
+        if gid == guild_id and uid in subs
     ]
 
     if not subscribed:
@@ -3893,8 +3928,8 @@ async def hourly_news_check():
 @tasks.loop(minutes=30)
 async def race_day_alert():
     """Alert every configured alerts channel when a G1 is within 24 hours."""
-    channels = _get_alerts_channels()
-    if not channels:
+    guild_channels = _get_alerts_channels_by_guild()
+    if not guild_channels:
         return
 
     now = datetime.now(timezone.utc)
@@ -3907,11 +3942,11 @@ async def race_day_alert():
             if abs(hours_away - threshold) <= 0.08:  # ~5 minute window
                 embed = build_g1_embed(race)
                 embed.color = discord.Color.red()
-                ping = _subscriber_ping(race["name"])
-                content = f"🚨 **{race['name']} is in ~{threshold} hour(s)!**"
-                if ping:
-                    content += f"\n{ping}"
-                for channel in channels:
+                for guild_id, channel in guild_channels:
+                    ping = _subscriber_ping(guild_id, race["name"])
+                    content = f"🚨 **{race['name']} is in ~{threshold} hour(s)!**"
+                    if ping:
+                        content += f"\n{ping}"
                     # At 24h, post a fresh sub card if not already up for this guild
                     if threshold == 24:
                         existing = _race_sub_messages.get(race["name"], [])
@@ -3931,10 +3966,12 @@ _posted_results: set[str] = set()
 # race_name → list of (channel_id, message_id) — one entry per guild that has
 #   a subscription card posted.  Multiple guilds can track the same race.
 _race_sub_messages: dict[str, list[tuple[int, int]]] = {}
-# race_name → set of user_ids who reacted with SUBSCRIBE_EMOJI (global across guilds)
-_race_subscriptions: dict[str, set[int]] = {}
+# (guild_id, race_name) → set of user_ids — scoped per guild to prevent cross-guild leakage
+_race_subscriptions: dict[tuple[int, str], set[int]] = {}
 # message_id → race_name (reverse lookup for reaction events)
 _msg_to_race: dict[int, str] = {}
+# message_id → guild_id (reverse lookup for reaction events)
+_msg_to_guild: dict[int, int] = {}
 
 SUBSCRIBE_EMOJI = "🔔"
 
@@ -3966,12 +4003,13 @@ async def post_race_subscription_card(
         _race_sub_messages[race["name"]] = []
     _race_sub_messages[race["name"]].append((channel.id, msg.id))
     _msg_to_race[msg.id] = race["name"]
+    _msg_to_guild[msg.id] = channel.guild.id
     return msg
 
 
-def _subscriber_ping(race_key: str) -> str:
-    """Return a space-separated string of <@user_id> mentions for a race's subscribers."""
-    subs = _race_subscriptions.get(race_key, set())
+def _subscriber_ping(guild_id: int, race_key: str) -> str:
+    """Return a space-separated string of <@user_id> mentions for a race's subscribers in a guild."""
+    subs = _race_subscriptions.get((guild_id, race_key), set())
     return " ".join(f"<@{uid}>" for uid in subs) if subs else ""
 
 
@@ -3980,6 +4018,7 @@ async def _cleanup_subscription(race_key: str) -> None:
     entries = _race_sub_messages.pop(race_key, [])
     for ch_id, msg_id in entries:
         _msg_to_race.pop(msg_id, None)
+        _msg_to_guild.pop(msg_id, None)
         channel = bot.get_channel(ch_id)
         if channel:
             try:
@@ -3987,7 +4026,9 @@ async def _cleanup_subscription(race_key: str) -> None:
                 await msg.delete()
             except (discord.NotFound, discord.Forbidden, discord.HTTPException):
                 pass
-    _race_subscriptions.pop(race_key, None)
+    # Remove all per-guild subscription entries for this race
+    for key in [k for k in _race_subscriptions if k[1] == race_key]:
+        _race_subscriptions.pop(key, None)
 
 
 # Map known G1 races to their Equibase track code + Racing Post track slug
@@ -4012,10 +4053,11 @@ async def auto_post_g1_results():
     Checks every 5 minutes whether any known G1 race has just finished
     (post time + 15 min grace period).  When detected, fetches the official
     result and posts a highlight card to every configured alerts channel.
-    Result data is fetched once per race, then broadcast to all guilds.
+    Result data is fetched once per race, then broadcast per-guild with
+    guild-scoped subscriber mentions to preserve tenant isolation.
     """
-    channels = _get_alerts_channels()
-    if not channels:
+    guild_channels = _get_alerts_channels_by_guild()
+    if not guild_channels:
         return
 
     now = datetime.now(timezone.utc)
@@ -4051,25 +4093,27 @@ async def auto_post_g1_results():
                 if matched:
                     starters = matched.get("starters", [])
                     if starters:
-                        # Build embeds once, broadcast to all guilds
+                        # Build shared embeds once; compute per-guild pings separately
                         highlight = build_g1_result_autopost_embed(race, starters)
-                        ping = _subscriber_ping(race_key)
-                        sub_count = len(_race_subscriptions.get(race_key, set()))
-                        content = f"🏆 **{race_key} — OFFICIAL RESULT**"
-                        if ping:
-                            content += f"\n{ping}"
-                        elif sub_count == 0:
-                            content += "\n*(No subscribers — react 🔔 to future announcements to be pinged)*"
                         full_embeds = build_results_embed_equibase(
                             trk, date_str, [matched], race_name_filter=race_key
                         )
-                        for channel in channels:
+                        total_subs = 0
+                        for guild_id, channel in guild_channels:
+                            ping = _subscriber_ping(guild_id, race_key)
+                            sub_count = len(_race_subscriptions.get((guild_id, race_key), set()))
+                            total_subs += sub_count
+                            content = f"🏆 **{race_key} — OFFICIAL RESULT**"
+                            if ping:
+                                content += f"\n{ping}"
+                            elif sub_count == 0:
+                                content += "\n*(No subscribers — react 🔔 to future announcements to be pinged)*"
                             await channel.send(content=content, embed=highlight)
                             for i in range(0, len(full_embeds), 5):
                                 await channel.send(embeds=full_embeds[i : i + 5])
                         await _cleanup_subscription(race_key)
                         _posted_results.add(race_key)
-                        log.info(f"Auto-posted result for {race_key} to {len(channels)} channel(s) ({sub_count} subscriber(s) pinged)")
+                        log.info(f"Auto-posted result for {race_key} to {len(guild_channels)} channel(s) ({total_subs} subscriber(s) pinged)")
 
             elif src == "racingpost":
                 date_str = race["date"].strftime("%Y-%m-%d")
@@ -4086,21 +4130,24 @@ async def auto_post_g1_results():
                         }
                         for r in runners
                     ]
+                    # Build shared embeds once; compute per-guild pings separately
                     highlight = build_g1_result_autopost_embed(race, adapted)
-                    ping = _subscriber_ping(race_key)
-                    sub_count = len(_race_subscriptions.get(race_key, set()))
-                    content = f"🏆 **{race_key} — OFFICIAL RESULT**"
-                    if ping:
-                        content += f"\n{ping}"
-                    elif sub_count == 0:
-                        content += "\n*(No subscribers — react 🔔 to future announcements to be pinged)*"
                     full_embed = build_results_embed_racingpost(trk, date_str, runners, race_name=race_key)
-                    for channel in channels:
+                    total_subs = 0
+                    for guild_id, channel in guild_channels:
+                        ping = _subscriber_ping(guild_id, race_key)
+                        sub_count = len(_race_subscriptions.get((guild_id, race_key), set()))
+                        total_subs += sub_count
+                        content = f"🏆 **{race_key} — OFFICIAL RESULT**"
+                        if ping:
+                            content += f"\n{ping}"
+                        elif sub_count == 0:
+                            content += "\n*(No subscribers — react 🔔 to future announcements to be pinged)*"
                         await channel.send(content=content, embed=highlight)
                         await channel.send(embed=full_embed)
                     await _cleanup_subscription(race_key)
                     _posted_results.add(race_key)
-                    log.info(f"Auto-posted result for {race_key} to {len(channels)} channel(s) ({sub_count} subscriber(s) pinged)")
+                    log.info(f"Auto-posted result for {race_key} to {len(guild_channels)} channel(s) ({total_subs} subscriber(s) pinged)")
 
         else:
             # No source mapping — post a "result pending" notice and mark as handled
@@ -4115,7 +4162,7 @@ async def auto_post_g1_results():
                     color=discord.Color.orange(),
                     timestamp=now,
                 )
-                for channel in channels:
+                for _gid, channel in guild_channels:
                     await channel.send(embed=embed)
                 _posted_results.add(race_key)
 
@@ -4179,13 +4226,18 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     if race and race["date"] < datetime.now(timezone.utc):
         return
 
-    uid = payload.user_id
-    if race_key not in _race_subscriptions:
-        _race_subscriptions[race_key] = set()
+    guild_id = _msg_to_guild.get(payload.message_id) or payload.guild_id
+    if not guild_id:
+        return  # reactions outside a guild are ignored
 
-    if uid not in _race_subscriptions[race_key]:
-        _race_subscriptions[race_key].add(uid)
-        log.info(f"User {uid} subscribed to {race_key} via reaction")
+    uid = payload.user_id
+    sub_key = (guild_id, race_key)
+    if sub_key not in _race_subscriptions:
+        _race_subscriptions[sub_key] = set()
+
+    if uid not in _race_subscriptions[sub_key]:
+        _race_subscriptions[sub_key].add(uid)
+        log.info(f"User {uid} subscribed to {race_key} in guild {guild_id} via reaction")
 
         # DM the user a confirmation
         try:
@@ -4215,11 +4267,15 @@ async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
     if not race_key:
         return
 
+    guild_id = _msg_to_guild.get(payload.message_id) or payload.guild_id
+    if not guild_id:
+        return  # reactions outside a guild are ignored
+
     uid = payload.user_id
-    subs = _race_subscriptions.get(race_key, set())
+    subs = _race_subscriptions.get((guild_id, race_key), set())
     if uid in subs:
         subs.discard(uid)
-        log.info(f"User {uid} unsubscribed from {race_key} via reaction remove")
+        log.info(f"User {uid} unsubscribed from {race_key} in guild {guild_id} via reaction remove")
 
         try:
             user = await bot.fetch_user(uid)
@@ -4232,9 +4288,36 @@ async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
 
 
 # ── Entry Point ───────────────────────────────────────────────────────────────
+#
+# Runs a tiny aiohttp health server alongside the Discord bot so that
+# Replit's publishing system can verify the process is alive.
+# Both share the same asyncio event loop — no threads needed.
+
+from aiohttp import web as _aio_web
+
+
+async def _health_handler(request: _aio_web.Request) -> _aio_web.Response:
+    return _aio_web.Response(text="OK")
+
+
+async def _start_health_server() -> None:
+    port = int(os.getenv("PORT", "8080"))
+    app = _aio_web.Application()
+    app.router.add_get("/", _health_handler)
+    app.router.add_get("/healthz", _health_handler)
+    runner = _aio_web.AppRunner(app)
+    await runner.setup()
+    await _aio_web.TCPSite(runner, "0.0.0.0", port).start()
+    log.info(f"Health server listening on port {port}")
+
+
+async def _main() -> None:
+    await _start_health_server()
+    await bot.start(TOKEN, reconnect=True)
+
 
 if __name__ == "__main__":
     if TOKEN == "YOUR_BOT_TOKEN_HERE":
         print("ERROR: Set DISCORD_BOT_TOKEN in your .env file or environment variables.")
         raise SystemExit(1)
-    bot.run(TOKEN, log_handler=None)
+    asyncio.run(_main())

@@ -1,157 +1,146 @@
-# 🏇 Honse Racing Discord Bot
+# 🏇 Horse Racing Bot
 
-A Discord bot that brings real-world horse racing data straight to your server — Grade 1, 2, and 3 race countdowns, race cards, live odds, official results, trainer and jockey stats, head-to-head comparisons (including retired and deceased horses), auto result notifications, and an Umamusume: Pretty Derby crossover feature.
-
----
-
-## Features
-
-- **G1, G2 & G3 race schedules** — upcoming races with live Discord countdowns and country filtering
-- **Race cards** — full list of runners, jockeys, and trainers from Equibase (US) or Racing Post (UK/IRE)
-- **Odds** — morning-line odds (Equibase), forecast odds (Racing Post), or multi-bookie comparison (OddsChecker)
-- **Official results** — finishing order and payouts from Equibase or Racing Post
-- **Horse profiles** — career stats, bloodline, and recent race history from Equibase
-- **Trainer & jockey stats** — win rates, career wins, and notable wins from Racing Post
-- **Head-to-head compare** — works for any two horses, including retired and deceased — pulls official career stats directly from Equibase
-- **News search** — latest horse racing articles from Google News, including per-race news built into `/g2` and `/g3`
-- **Result subscriptions** — react 🔔 on any race card or use `/subscribe` to get pinged when results post
-- **Auto-posts** — daily G1 countdown, race-day alerts (24h/6h/1h), hourly news, and auto result posting
-- **Umamusume: Pretty Derby** — character profiles, story lore, and Q&A for horses that appear in the game
-
-### Country filtering
-
-`/upcoming`, `/g1`, `/g2`, `/g3`, `/countdown`, and `/subscribe` all have a `country:` dropdown covering 16 nations:
-
-🌍 All · 🇺🇸 USA · 🇬🇧 UK · 🇮🇪 Ireland · 🇫🇷 France · 🇯🇵 Japan · 🇦🇺 Australia · 🇦🇪 UAE · 🇭🇰 Hong Kong · 🇨🇦 Canada · 🇩🇪 Germany · 🇸🇬 Singapore · 🇮🇹 Italy · 🇸🇦 Saudi Arabia · 🇿🇦 South Africa · 🇦🇷 Argentina
+A Discord bot for real-world horse racing analysis — live race coverage, G1/G2/G3 race countdowns, horse and jockey research, automatic race-day alerts, and result subscriptions, all in one place.
 
 ---
 
-## Commands
+## Features at a Glance
 
-### Race Discovery
-| Command | What it does |
+| Category | What it does |
 |---|---|
-| `/upcoming` | G1 races in the next 7 days — optional `country:` filter |
-| `/g1` | Details + countdown for a G1 race — optional `country:` and `name:` filters |
-| `/g2` | Details + countdown for a G2 race — optional `country:` and `name:` filters — auto-fetches news when searching by name |
-| `/g3` | Details + countdown for a G3 race — optional `country:` and `name:` filters — auto-fetches news when searching by name |
-| `/countdown` | Self-updating Discord timer for a race — optional `country:` filter |
-
-### Race Day
-| Command | What it does |
-|---|---|
-| `/runners` | Full race card: horses, jockeys, and trainers |
-| `/odds` | Morning-line or multi-bookie odds |
-| `/result` | Official finishing order + payouts |
-
-### Research
-| Command | What it does |
-|---|---|
-| `/horse` | Full horse profile from Equibase — auto-shows Umamusume card if applicable |
-| `/trainer` | Trainer stats from Racing Post |
-| `/jockey` | Jockey stats from Racing Post |
-| `/compare` | Full head-to-head: bloodline, career record, direct meetings — works for active, retired & deceased horses |
-| `/news` | Latest horse racing news from Google News |
-
-### Umamusume: Pretty Derby
-| Command | What it does |
-|---|---|
-| `/umamusume name:<horse>` | Full character profile: personality, story arc, fun facts, lore topics |
-| `/umamusume name:<horse> question:<q>` | Ask a lore question about that character |
-
-### Subscriptions
-| Command | What it does |
-|---|---|
-| `/subscribe` | Subscribe to race result pings — optional `country:` filter |
-| `/unsubscribe` | Remove a subscription |
-| `/mysubscriptions` | See all your active subscriptions |
-
-### Other
-| Command | What it does |
-|---|---|
-| `/help` | Full command reference inside Discord |
+| **Race Discovery** | Browse and search G1, G2, G3 races across 16 countries |
+| **Race Day** | Live runners, odds, and official results |
+| **Research** | Deep dives on horses, trainers, and jockeys |
+| **Auto-Posts** | Daily countdowns, race-day pings, automatic results |
+| **Subscriptions** | Get pinged the moment a race result is posted |
+| **Umamusume** | Lore cards and Q&A for Uma Musume characters |
 
 ---
 
-## `/compare` — Works for Any Horse
+## Server Setup
 
-`/compare` uses the full Equibase horse profile rather than only recent race entries. This means it shows official career statistics (starts, wins, places, shows, earnings, bloodline, trainer, owner) even for horses that are:
+Once the bot is in your server, a server admin runs two commands to enable automatic posts:
 
-- **Retired** — no longer racing but still in Equibase's records
-- **Deceased** — Equibase keeps career stats permanently
-- **Older legends** — horses from decades ago with no recent form data
+```
+/setup channel_type:alerts  channel:#your-channel
+/setup channel_type:news    channel:#your-channel
+```
 
-Each comparison shows:
-1. **Profile card** — bloodline, born, colour/sex, trainer, owner, career earnings, links
-2. **Career stats card** — starts/wins/places/shows, win % bar graph, direct meeting tally
-3. **Recent form table** — last 10 races (when available)
-4. **Direct matchup detail** — every race where both horses ran on the same day and track
-5. **News** — latest articles for each horse
+- **Alerts channel** — receives G1 countdown cards, race-day pings (24h / 6h / 1h), and automatic results
+- **News channel** — receives the hourly breaking G1 news feed
 
----
+To check your current configuration:
+```
+/setup channel_type:view
+```
 
-## G2 and G3 Race Lists
-
-The bot includes built-in schedules for **Grade 2** and **Grade 3** races across all supported countries, covering around 35+ races per grade. Dates update each season — see `GUIDE.md` for how to add or update races.
+Requires **Manage Server** permission. Each server configures its own channels independently.
 
 ---
 
-## Umamusume: Pretty Derby Integration
+## Command Reference
 
-The bot includes a built-in database of 21 characters from **Umamusume: Pretty Derby** (by Cygames), matched to their real racehorse counterparts.
+### 📅 Race Discovery
 
-**How it works:**
-- Use `/umamusume name:<horse>` to get a character's full profile
-- Add `question:` to ask about specific lore topics (e.g. *"Who is her rival?"*, *"What happened to her?"*)
-- When you look up a horse with `/horse`, a 🌸 teaser card automatically appears if that horse has an Umamusume counterpart
+| Command | Description |
+|---|---|
+| `/upcoming` | G1 races in the **next 7 days** — optional `country:` filter |
+| `/g1` | Grade 1 details and countdown — browse by country or search by name |
+| `/g2` | Grade 2 details and countdown — includes auto-fetched race news |
+| `/g3` | Grade 3 details and countdown — includes auto-fetched race news |
+| `/countdown name:<race>` | Self-updating Discord timer for any race |
 
-**Supported characters:**
+**Supported countries:** 🌍 All · 🇺🇸 USA · 🇬🇧 UK · 🇮🇪 Ireland · 🇫🇷 France · 🇯🇵 Japan · 🇦🇺 Australia · 🇦🇪 UAE · 🇭🇰 Hong Kong · 🇨🇦 Canada · 🇩🇪 Germany · 🇸🇬 Singapore · 🇮🇹 Italy · 🇸🇦 Saudi Arabia · 🇿🇦 South Africa · 🇦🇷 Argentina
 
-| Real Horse | Character | Known For |
+---
+
+### 🐎 Race Day
+
+| Command | Description |
+|---|---|
+| `/runners source:<source> track:<track> date:<date>` | Full race card — horses, jockeys, trainers |
+| `/odds source:<source> track:<track>` | Morning-line or multi-bookie odds |
+| `/result source:<source> track:<track> date:<date>` | Official finishing order and payouts |
+
+**Sources:**
+- `equibase` — US races
+- `racingpost` — UK, Ireland, and international races
+- `oddschecker` — live odds comparison
+
+---
+
+### 🔍 Research
+
+| Command | Description |
+|---|---|
+| `/horse name:<name>` | Full Equibase profile — bloodline, career record, recent races, and news |
+| `/trainer name:<name>` | Racing Post stats — win rate, notable wins, recent runners |
+| `/jockey name:<name>` | Racing Post stats — win rate, career wins, recent rides |
+| `/compare horse_a:<name> horse_b:<name>` | Head-to-head comparison — bloodline, career stats, direct meetings |
+| `/news query:<term>` | Latest horse racing news from Google News |
+
+`/compare` works for **active, retired, and deceased** horses — pulls full career stats from Equibase.
+
+`/horse` automatically shows a 🌸 Umamusume teaser card if the horse has a character counterpart.
+
+---
+
+### 🔔 Result Subscriptions
+
+React with 🔔 on any race announcement card to subscribe, or use the commands directly:
+
+| Command | Description |
+|---|---|
+| `/subscribe name:<race>` | Get pinged when that race's official result is posted |
+| `/unsubscribe name:<race>` | Remove yourself from a race's alert list |
+| `/mysubscriptions` | See all races you're currently subscribed to |
+
+Subscriptions are removed automatically after the result is posted. Each server's subscribers are tracked independently.
+
+---
+
+### 🎌 Umamusume: Pretty Derby
+
+| Command | Description |
+|---|---|
+| `/umamusume name:<horse>` | Character card — personality, story arc, and fun facts |
+| `/umamusume name:<horse> question:<q>` | Ask a lore question about the character |
+
+Supported characters include Special Week, Silence Suzuka, Tokai Teio, Gold Ship, Oguri Cap, El Condor Pasa, and many more.
+
+---
+
+## Automatic Posts
+
+Once channels are configured with `/setup`, the bot handles these automatically — no command needed:
+
+| Post | Schedule | Channel |
 |---|---|---|
-| Special Week | 🌸 Special Week | Anime Season 1 protagonist, loves food |
-| Silence Suzuka | 💨 Silence Suzuka | "Running through the sky", emotional S1 arc |
-| Tokai Teio | 👑 Tokai Teio | Anime Season 2, came back from 3 fractures |
-| Mejiro McQueen | 🎩 Mejiro McQueen | Aristocratic, obsessed with cats |
-| Rice Shower | 🌧️ Rice Shower | Called "villain" unfairly — heartbreaking story |
-| El Condor Pasa | 🦅 El Condor Pasa | Chased the Arc de Triomphe, says "Muy bien!" |
-| Gold Ship | 🌊 Gold Ship | Absolute chaos, somehow always wins |
-| Oguri Cap | 🍙 Oguri Cap | Food-loving people's champion |
-| Symboli Rudolf | 🎖️ Symboli Rudolf | Student council president, greatest of his era |
-| Agnes Tachyon | ⚗️ Agnes Tachyon | Mad scientist, undefeated and retired |
-| Vodka | 🍸 Vodka | First filly to win the Japan Cup |
-| Daiwa Scarlet | 🔴 Daiwa Scarlet | Lost only once — to Vodka |
-| Kitasan Black | 🖤 Kitasan Black | Modern champion, sunny personality |
-| Taiki Shuttle | 🇺🇸 Taiki Shuttle | First Japanese horse to win a Breeders' Cup |
-| Twin Turbo | 💥 Twin Turbo | One strategy: GO FAST NOW |
-| Narita Brian | 🌑 Narita Brian | Triple Crown, dark and powerful |
-| Mihono Bourbon | ⚙️ Mihono Bourbon | Robotic training style, defeated by Rice Shower |
-| Biwa Hayahide | 🎻 Biwa Hayahide | Narita Brian's half-sibling rival |
-| Sakura Bakushin O | 🌸💨 Sakura Bakushin O | Japan's greatest sprinter |
-| T.M. Opera O | 🎭 T.M. Opera O | Won 8 G1s in one year (2000) |
-| Smart Falcon | 🏜️ Smart Falcon | Undefeated in dirt G1s — 7 for 7 |
+| **Daily G1 Countdown** | Once per day at midnight UTC | Alerts |
+| **Race-Day Alerts** | At 24h, 6h, and 1h before each G1 | Alerts |
+| **Auto Results** | 15–90 minutes after each scheduled G1 | Alerts |
+| **Breaking News** | Every hour | News |
 
-More characters can be added to `UMAMUSUME_DATA` in `bot.py` at any time — see the template in that file.
+Race-day alerts include a 🔔 subscription card — members who react are automatically pinged when the result drops.
+
+---
+
+## Supported Race Coverage
+
+### Grade 1 — Full auto-post coverage
+Kentucky Derby · Preakness Stakes · Belmont Stakes · Breeders' Cup Classic · Royal Ascot Gold Cup · King George VI & Queen Elizabeth Stakes · Arc de Triomphe · Japan Cup · Melbourne Cup · Dubai World Cup · and more
+
+### Grade 2 & Grade 3
+Searchable by name or country with race news auto-fetched at search time.
 
 ---
 
 ## Data Sources
 
-All data is scraped from publicly available websites — no paid API keys required.
-
 | Source | Used for |
 |---|---|
-| [Equibase](https://www.equibase.com) | US race cards, results, horse profiles, career stats (all horses including retired) |
-| [Racing Post](https://www.racingpost.com) | UK/IRE race cards, trainer/jockey stats |
-| [OddsChecker](https://www.oddschecker.com) | Multi-bookmaker odds comparison |
-| [Google News RSS](https://news.google.com) | Latest horse racing news articles |
-| Umamusume: Pretty Derby (Cygames) | In-game character lore — for entertainment only |
-
----
-
-## Legal
-
-- [Terms of Service](TERMS_OF_SERVICE.md)
-- [Privacy Policy](PRIVACY_POLICY.md)
-
-This bot is for **informational and entertainment purposes only**. Nothing it provides constitutes financial or gambling advice. Umamusume: Pretty Derby character information is included as fan reference content only — all game content belongs to Cygames.
+| **Equibase** | US race results, horse profiles, career stats |
+| **Racing Post** | International results, trainer/jockey stats |
+| **Oddschecker** | Live odds comparison |
+| **Google News** | Breaking racing news |
+| **RSS Feeds** | Bloodhorse, TDN, Racing Post headlines |
