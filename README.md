@@ -110,50 +110,6 @@ More characters can be added to `UMAMUSUME_DATA` in `bot.py` at any time — see
 
 ---
 
-## Setup
-
-### Requirements
-
-- Python 3.10 or higher
-- A Discord bot token from the [Discord Developer Portal](https://discord.com/developers/applications)
-
-### Install dependencies
-
-```bash
-pip install discord.py aiohttp beautifulsoup4 feedparser python-dotenv
-```
-
-### Configure
-
-Create a `.env` file in this folder:
-
-```
-DISCORD_BOT_TOKEN=your_token_here
-G1_ALERTS_CHANNEL_ID=your_channel_id_here
-RACE_UPDATES_CHANNEL_ID=your_channel_id_here
-```
-
-### Run
-
-```bash
-python bot.py
-```
-
-The bot is online while this command is running. Press `Ctrl + C` to stop it.
-
-> **After any update to bot.py:** stop the bot, replace the file, and restart it. New slash commands register automatically on startup — allow 1–2 minutes for Discord to show them.
-
----
-
-## Discord Developer Portal Settings
-
-In the [Developer Portal](https://discord.com/developers/applications), under your app's **Bot** page, make sure these are enabled:
-
-- ✅ **Server Members Intent**
-- ✅ **Message Content Intent**
-
----
-
 ## Customising Images
 
 Near the top of `bot.py` you'll find dictionaries where you can add your own image URLs:
