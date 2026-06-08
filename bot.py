@@ -17,6 +17,7 @@ Run:
     RACE_UPDATES_CHANNEL_ID=your_channel_id # Channel for race-day updates
 """
 
+import json
 import os
 import asyncio
 import logging
@@ -35,8 +36,61 @@ load_dotenv()
 # ── Config ────────────────────────────────────────────────────────────────────
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
-G1_ALERTS_CHANNEL_ID = int(os.getenv("G1_ALERTS_CHANNEL_ID", "0"))
-RACE_UPDATES_CHANNEL_ID = int(os.getenv("RACE_UPDATES_CHANNEL_ID", "0"))
+
+# ── Per-guild channel config ───────────────────────────────────────────────────
+# Replaces the old single G1_ALERTS_CHANNEL_ID / RACE_UPDATES_CHANNEL_ID env
+# vars.  Each guild sets its own channels via /setup.  Config persists across
+# restarts in guild_config.json next to bot.py.
+#
+# Schema: { guild_id (int) → {"alerts_channel": int|None, "news_channel": int|None} }
+
+_BOT_DIR = os.path.dirname(os.path.abspath(__file__))
+GUILD_CONFIG_FILE = os.path.join(_BOT_DIR, "guild_config.json")
+GUILD_CONFIG: dict[int, dict] = {}
+
+
+def _load_guild_config() -> None:
+    global GUILD_CONFIG
+    if os.path.exists(GUILD_CONFIG_FILE):
+        try:
+            with open(GUILD_CONFIG_FILE, "r") as f:
+                raw = json.load(f)
+            GUILD_CONFIG = {int(k): v for k, v in raw.items()}
+            log.info(f"Loaded guild config for {len(GUILD_CONFIG)} guild(s)")
+        except Exception as exc:
+            log.warning(f"Could not load guild_config.json: {exc}")
+
+
+def _save_guild_config() -> None:
+    try:
+        with open(GUILD_CONFIG_FILE, "w") as f:
+            json.dump({str(k): v for k, v in GUILD_CONFIG.items()}, f, indent=2)
+    except Exception as exc:
+        log.warning(f"Could not save guild_config.json: {exc}")
+
+
+def _get_alerts_channels() -> list:
+    """Return every configured G1-alerts TextChannel across all guilds."""
+    channels = []
+    for cfg in GUILD_CONFIG.values():
+        ch_id = cfg.get("alerts_channel")
+        if ch_id:
+            ch = bot.get_channel(int(ch_id))
+            if ch:
+                channels.append(ch)
+    return channels
+
+
+def _get_news_channels() -> list:
+    """Return every configured news TextChannel across all guilds."""
+    channels = []
+    for cfg in GUILD_CONFIG.values():
+        ch_id = cfg.get("news_channel")
+        if ch_id:
+            ch = bot.get_channel(int(ch_id))
+            if ch:
+                channels.append(ch)
+    return channels
 
 # ── Custom Image URLs ─────────────────────────────────────────────────────────
 #
@@ -3340,6 +3394,88 @@ async def cmd_umamusume(interaction: discord.Interaction, name: str, question: s
         await interaction.followup.send(embed=qa_embed)
 
 
+# ── /setup ────────────────────────────────────────────────────────────────────
+
+@tree.command(
+    name="setup",
+    description="Configure this server's alert/news channels (admin only)",
+)
+@app_commands.describe(
+    channel_type='Choose what this channel is used for: "alerts" for G1 countdowns/results, "news" for hourly news, "view" to see current settings',
+    channel="The channel to assign (leave blank with type=view)",
+)
+@app_commands.choices(
+    channel_type=[
+        app_commands.Choice(name="alerts — G1 countdowns, race-day pings & auto-results", value="alerts"),
+        app_commands.Choice(name="news   — hourly G1 breaking news feed",                value="news"),
+        app_commands.Choice(name="view   — show current settings for this server",        value="view"),
+    ]
+)
+async def cmd_setup(
+    interaction: discord.Interaction,
+    channel_type: app_commands.Choice[str],
+    channel: discord.TextChannel = None,
+):
+    await interaction.response.defer(ephemeral=True)
+
+    guild = interaction.guild
+    if guild is None:
+        await interaction.followup.send("❌ This command must be used inside a server.", ephemeral=True)
+        return
+
+    # View-only mode — no permission check needed
+    if channel_type.value == "view":
+        cfg = GUILD_CONFIG.get(guild.id, {})
+        alerts_id = cfg.get("alerts_channel")
+        news_id   = cfg.get("news_channel")
+        alerts_str = f"<#{alerts_id}>" if alerts_id else "*(not set)*"
+        news_str   = f"<#{news_id}>"   if news_id   else "*(not set)*"
+        embed = discord.Embed(
+            title="⚙️  Bot Channel Configuration",
+            description=f"Current settings for **{guild.name}**",
+            color=discord.Color.blurple(),
+            timestamp=datetime.now(timezone.utc),
+        )
+        embed.add_field(name="🏆 G1 Alerts channel",  value=alerts_str, inline=False)
+        embed.add_field(name="📰 News feed channel",  value=news_str,   inline=False)
+        embed.set_footer(text="Use /setup alerts/news to change these")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        return
+
+    # Setting a channel — requires Manage Guild permission
+    member = interaction.user
+    if not isinstance(member, discord.Member) or not member.guild_permissions.manage_guild:
+        await interaction.followup.send(
+            "❌ You need the **Manage Server** permission to change bot settings.",
+            ephemeral=True,
+        )
+        return
+
+    if channel is None:
+        await interaction.followup.send(
+            "❌ Please provide a channel. Example: `/setup channel_type:alerts channel:#general`",
+            ephemeral=True,
+        )
+        return
+
+    if guild.id not in GUILD_CONFIG:
+        GUILD_CONFIG[guild.id] = {}
+
+    field = "alerts_channel" if channel_type.value == "alerts" else "news_channel"
+    GUILD_CONFIG[guild.id][field] = channel.id
+    _save_guild_config()
+
+    label = "G1 Alerts" if channel_type.value == "alerts" else "News Feed"
+    embed = discord.Embed(
+        title="✅  Channel Saved",
+        description=f"**{label}** will now post to {channel.mention}.\n\nBackground tasks will pick it up on the next cycle.",
+        color=discord.Color.green(),
+        timestamp=datetime.now(timezone.utc),
+    )
+    embed.set_footer(text="Use /setup view to confirm settings · /setup to change them again")
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+
 @tree.command(name="help", description="Show all available bot commands and what they do")
 async def cmd_help(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
@@ -3418,7 +3554,19 @@ async def cmd_help(interaction: discord.Interaction):
             "**Daily countdown** — Top 3 upcoming G1s posted each day with a 🔔 subscribe card\n"
             "**Race-day alerts** — Pings at 24h, 6h and 1h before each G1\n"
             "**Auto results** — Fetches and posts the official result 15–90 min after each race\n"
-            "**Hourly news** — Latest breaking G1 news posted every hour"
+            "**Hourly news** — Latest breaking G1 news posted every hour\n\n"
+            "→ Use `/setup` to choose which channels in *this server* receive these posts"
+        ),
+        inline=False,
+    )
+
+    embed.add_field(
+        name="🔧  Server Setup",
+        value=(
+            "`/setup channel_type:alerts channel:#your-channel` — Set the G1 alerts & results channel\n"
+            "`/setup channel_type:news   channel:#your-channel` — Set the hourly news feed channel\n"
+            "`/setup channel_type:view`                         — See current channel configuration\n\n"
+            "Requires **Manage Server** permission · Each server configures its own channels"
         ),
         inline=False,
     )
@@ -3701,58 +3849,52 @@ async def prefix_runners(ctx: commands.Context, source: str, track: str, date: s
 
 @tasks.loop(hours=24)
 async def daily_g1_alert():
-    """Post daily G1 countdown to the alerts channel at midnight UTC."""
-    if G1_ALERTS_CHANNEL_ID == 0:
-        return
-
-    channel = bot.get_channel(G1_ALERTS_CHANNEL_ID)
-    if not channel:
-        log.warning(f"G1 alerts channel {G1_ALERTS_CHANNEL_ID} not found")
+    """Post daily G1 countdown to every configured alerts channel at midnight UTC."""
+    channels = _get_alerts_channels()
+    if not channels:
         return
 
     races = upcoming_g1s(3)
     if not races:
         return
 
-    await channel.send(
-        f"**🏆 Daily G1 Race Countdown** — React {SUBSCRIBE_EMOJI} on a race below to get "
-        "pinged the moment its official result is posted!"
-    )
-    for race in races:
-        days_away = (race["date"] - datetime.now(timezone.utc)).days
-        if days_away <= 30:  # Only post if within 30 days
-            # Only create a new sub card if one doesn't already exist for this race
-            if race["name"] not in _race_sub_messages:
-                await post_race_subscription_card(channel, race)
-            else:
-                await channel.send(embed=build_g1_embed(race))
+    for channel in channels:
+        await channel.send(
+            f"**🏆 Daily G1 Race Countdown** — React {SUBSCRIBE_EMOJI} on a race below to get "
+            "pinged the moment its official result is posted!"
+        )
+        for race in races:
+            days_away = (race["date"] - datetime.now(timezone.utc)).days
+            if days_away <= 30:
+                # Check if this guild already has a sub card for this race
+                existing = _race_sub_messages.get(race["name"], [])
+                already_posted = any(ch_id == channel.id for ch_id, _ in existing)
+                if not already_posted:
+                    await post_race_subscription_card(channel, race)
+                else:
+                    await channel.send(embed=build_g1_embed(race))
 
 
 @tasks.loop(hours=1)
 async def hourly_news_check():
-    """Post breaking G1 news to the updates channel once per hour."""
-    if RACE_UPDATES_CHANNEL_ID == 0:
-        return
-
-    channel = bot.get_channel(RACE_UPDATES_CHANNEL_ID)
-    if not channel:
+    """Post breaking G1 news to every configured news channel once per hour."""
+    channels = _get_news_channels()
+    if not channels:
         return
 
     articles = await search_racing_news("G1 horse racing breaking news")
     if articles:
         embed = build_news_embed("G1 Horse Racing — Latest News", articles[:3])
         embed.set_footer(text="Auto-updated every hour")
-        await channel.send(embed=embed)
+        for channel in channels:
+            await channel.send(embed=embed)
 
 
 @tasks.loop(minutes=30)
 async def race_day_alert():
-    """Alert when a G1 is within 24 hours."""
-    if G1_ALERTS_CHANNEL_ID == 0:
-        return
-
-    channel = bot.get_channel(G1_ALERTS_CHANNEL_ID)
-    if not channel:
+    """Alert every configured alerts channel when a G1 is within 24 hours."""
+    channels = _get_alerts_channels()
+    if not channels:
         return
 
     now = datetime.now(timezone.utc)
@@ -3766,13 +3908,17 @@ async def race_day_alert():
                 embed = build_g1_embed(race)
                 embed.color = discord.Color.red()
                 ping = _subscriber_ping(race["name"])
-                # At 24h, post a fresh sub card if not already up
-                if threshold == 24 and race["name"] not in _race_sub_messages:
-                    await post_race_subscription_card(channel, race)
                 content = f"🚨 **{race['name']} is in ~{threshold} hour(s)!**"
                 if ping:
                     content += f"\n{ping}"
-                await channel.send(content=content, embed=embed)
+                for channel in channels:
+                    # At 24h, post a fresh sub card if not already up for this guild
+                    if threshold == 24:
+                        existing = _race_sub_messages.get(race["name"], [])
+                        already_posted = any(ch_id == channel.id for ch_id, _ in existing)
+                        if not already_posted:
+                            await post_race_subscription_card(channel, race)
+                    await channel.send(content=content, embed=embed)
 
 
 # ── Auto-Post G1 Results ─────────────────────────────────────────────────────
@@ -3782,9 +3928,10 @@ async def race_day_alert():
 _posted_results: set[str] = set()
 
 # ── Race Subscription State ───────────────────────────────────────────────────
-# race_name → (channel_id, message_id) of the live subscription post
-_race_sub_messages: dict[str, tuple[int, int]] = {}
-# race_name → set of user_ids who reacted with SUBSCRIBE_EMOJI
+# race_name → list of (channel_id, message_id) — one entry per guild that has
+#   a subscription card posted.  Multiple guilds can track the same race.
+_race_sub_messages: dict[str, list[tuple[int, int]]] = {}
+# race_name → set of user_ids who reacted with SUBSCRIBE_EMOJI (global across guilds)
 _race_subscriptions: dict[str, set[int]] = {}
 # message_id → race_name (reverse lookup for reaction events)
 _msg_to_race: dict[int, str] = {}
@@ -3799,6 +3946,7 @@ async def post_race_subscription_card(
     Post an upcoming-G1 embed with a 🔔 reaction attached.
     Members who react are stored in _race_subscriptions and pinged when
     the official result drops.  The message is deleted automatically after.
+    Supports multiple guilds — each gets its own subscription card tracked.
     """
     embed = build_g1_embed(race)
     embed.add_field(
@@ -3813,7 +3961,10 @@ async def post_race_subscription_card(
     embed.set_footer(text="React 🔔 to subscribe  ·  React again to unsubscribe")
     msg = await channel.send(embed=embed)
     await msg.add_reaction(SUBSCRIBE_EMOJI)
-    _race_sub_messages[race["name"]] = (channel.id, msg.id)
+    # Append this guild's card to the list (don't overwrite — multiple guilds)
+    if race["name"] not in _race_sub_messages:
+        _race_sub_messages[race["name"]] = []
+    _race_sub_messages[race["name"]].append((channel.id, msg.id))
     _msg_to_race[msg.id] = race["name"]
     return msg
 
@@ -3825,10 +3976,9 @@ def _subscriber_ping(race_key: str) -> str:
 
 
 async def _cleanup_subscription(race_key: str) -> None:
-    """Delete the subscription message and wipe subscription data for a finished race."""
-    entry = _race_sub_messages.pop(race_key, None)
-    if entry:
-        ch_id, msg_id = entry
+    """Delete all subscription messages (one per guild) and wipe subscription data."""
+    entries = _race_sub_messages.pop(race_key, [])
+    for ch_id, msg_id in entries:
         _msg_to_race.pop(msg_id, None)
         channel = bot.get_channel(ch_id)
         if channel:
@@ -3861,13 +4011,11 @@ async def auto_post_g1_results():
     """
     Checks every 5 minutes whether any known G1 race has just finished
     (post time + 15 min grace period).  When detected, fetches the official
-    result and posts a highlight card to G1_ALERTS_CHANNEL_ID.
+    result and posts a highlight card to every configured alerts channel.
+    Result data is fetched once per race, then broadcast to all guilds.
     """
-    if G1_ALERTS_CHANNEL_ID == 0:
-        return
-
-    channel = bot.get_channel(G1_ALERTS_CHANNEL_ID)
-    if not channel:
+    channels = _get_alerts_channels()
+    if not channels:
         return
 
     now = datetime.now(timezone.utc)
@@ -3888,7 +4036,6 @@ async def auto_post_g1_results():
         log.info(f"Attempting to auto-fetch result for {race_key} ({minutes_since:.0f} min after post)")
 
         source_info = G1_RESULT_SOURCES.get(race_key)
-        starters: list[dict] = []
 
         if source_info:
             src = source_info["source"]
@@ -3897,16 +4044,14 @@ async def auto_post_g1_results():
             if src == "equibase":
                 date_str = race["date"].strftime("%Y%m%d")
                 races_data = await fetch_results_equibase(track_code=trk.upper(), date_str=date_str)
-                # Find the race in the results that matches by name
                 matched = next(
                     (r for r in races_data if race_key.lower() in r["race"].lower()),
                     races_data[0] if races_data else None,
                 )
                 if matched:
                     starters = matched.get("starters", [])
-                    payouts  = matched.get("payouts", [])
-                    # Post the compact highlight card
                     if starters:
+                        # Build embeds once, broadcast to all guilds
                         highlight = build_g1_result_autopost_embed(race, starters)
                         ping = _subscriber_ping(race_key)
                         sub_count = len(_race_subscriptions.get(race_key, set()))
@@ -3915,25 +4060,21 @@ async def auto_post_g1_results():
                             content += f"\n{ping}"
                         elif sub_count == 0:
                             content += "\n*(No subscribers — react 🔔 to future announcements to be pinged)*"
-                        await channel.send(content=content, embed=highlight)
-                        # Full finishing order table
                         full_embeds = build_results_embed_equibase(
-                            trk, date_str,
-                            [matched],
-                            race_name_filter=race_key,
+                            trk, date_str, [matched], race_name_filter=race_key
                         )
-                        for i in range(0, len(full_embeds), 5):
-                            await channel.send(embeds=full_embeds[i : i + 5])
-                        # Clean up subscription message and subscriber list
+                        for channel in channels:
+                            await channel.send(content=content, embed=highlight)
+                            for i in range(0, len(full_embeds), 5):
+                                await channel.send(embeds=full_embeds[i : i + 5])
                         await _cleanup_subscription(race_key)
                         _posted_results.add(race_key)
-                        log.info(f"Auto-posted result for {race_key} ({sub_count} subscriber(s) pinged)")
+                        log.info(f"Auto-posted result for {race_key} to {len(channels)} channel(s) ({sub_count} subscriber(s) pinged)")
 
             elif src == "racingpost":
                 date_str = race["date"].strftime("%Y-%m-%d")
                 runners = await fetch_results_racingpost(date_str=date_str, track=trk)
                 if runners:
-                    # Adapt Racing Post runner format to build_g1_result_autopost_embed
                     adapted = [
                         {
                             "finish":  r["finish"],
@@ -3953,18 +4094,16 @@ async def auto_post_g1_results():
                         content += f"\n{ping}"
                     elif sub_count == 0:
                         content += "\n*(No subscribers — react 🔔 to future announcements to be pinged)*"
-                    await channel.send(content=content, embed=highlight)
-                    full_embed = build_results_embed_racingpost(
-                        trk, date_str, runners, race_name=race_key
-                    )
-                    await channel.send(embed=full_embed)
+                    full_embed = build_results_embed_racingpost(trk, date_str, runners, race_name=race_key)
+                    for channel in channels:
+                        await channel.send(content=content, embed=highlight)
+                        await channel.send(embed=full_embed)
                     await _cleanup_subscription(race_key)
                     _posted_results.add(race_key)
-                    log.info(f"Auto-posted result for {race_key} ({sub_count} subscriber(s) pinged)")
+                    log.info(f"Auto-posted result for {race_key} to {len(channels)} channel(s) ({sub_count} subscriber(s) pinged)")
 
         else:
             # No source mapping — post a "result pending" notice and mark as handled
-            # so we don't keep retrying every 5 min for the full 90-min window
             if minutes_since >= 30:
                 embed = discord.Embed(
                     title=f"🏁 {race_key} — Result Pending",
@@ -3976,7 +4115,8 @@ async def auto_post_g1_results():
                     color=discord.Color.orange(),
                     timestamp=now,
                 )
-                await channel.send(embed=embed)
+                for channel in channels:
+                    await channel.send(embed=embed)
                 _posted_results.add(race_key)
 
 
@@ -3985,6 +4125,9 @@ async def auto_post_g1_results():
 @bot.event
 async def on_ready():
     log.info(f"Logged in as {bot.user} (ID: {bot.user.id})")
+
+    # Load per-guild channel config from disk
+    _load_guild_config()
 
     # Sync slash commands globally (may take up to 1h to propagate)
     # For instant testing in one server, use: await tree.sync(guild=discord.Object(id=YOUR_GUILD_ID))
