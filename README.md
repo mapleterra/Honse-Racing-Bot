@@ -110,21 +110,6 @@ More characters can be added to `UMAMUSUME_DATA` in `bot.py` at any time — see
 
 ---
 
-## Customising Images
-
-Near the top of `bot.py` you'll find dictionaries where you can add your own image URLs:
-
-- `RACE_IMAGES` — banner image shown on each G1 race embed
-- `HORSE_IMAGES` — profile photo for `/horse` embeds
-- `TRAINER_IMAGES` — photo for `/trainer` embeds
-- `JOCKEY_IMAGES` — photo for `/jockey` embeds
-- `BOT_BANNER_URL` — default fallback banner for all embeds
-- `UMAMUSUME_DATA` entries each have an `"icon_url"` field for character thumbnails
-
-See `GUIDE.md` for full instructions on finding and hosting image URLs for free.
-
----
-
 ## Data Sources
 
 All data is scraped from publicly available websites — no paid API keys required.
