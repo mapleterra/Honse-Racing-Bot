@@ -21,6 +21,7 @@ import json
 import os
 import asyncio
 import logging
+import urllib.parse
 from datetime import datetime, timezone, timedelta
 
 import discord
@@ -685,6 +686,109 @@ def answer_umamusume_lore(data: dict, question: str) -> str:
     )
 
 
+async def fetch_umamusume_fandom(uma_name: str) -> dict:
+    """
+    Fetch official character data from the Umamusume Fandom wiki API.
+    Returns image URL, kana name, game stats, voice actor, appearances, and opening quote.
+    All values default to "" if not found. No scraping — uses the public MediaWiki API.
+    """
+    result: dict = {
+        "image_url": "", "kana": "", "birth_date": "", "height": "",
+        "team": "", "runner_type": "", "distance": "",
+        "voice_actor": "", "quote": "", "appearances": "", "wiki_url": "",
+    }
+
+    page_title = uma_name.replace(" ", "_")
+    result["wiki_url"] = (
+        "https://umamusume.fandom.com/wiki/" + urllib.parse.quote(page_title)
+    )
+    api = "https://umamusume.fandom.com/api.php"
+    api_headers = {
+        "User-Agent": "HorseRacingBot/1.0 (Discord bot; educational use)",
+        "Accept": "application/json",
+    }
+    timeout = aiohttp.ClientTimeout(total=10)
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            img_url = (
+                f"{api}?action=query&titles={urllib.parse.quote(page_title)}"
+                "&prop=pageimages&format=json&pithumbsize=600"
+            )
+            wt_url = (
+                f"{api}?action=parse&page={urllib.parse.quote(page_title)}"
+                "&prop=wikitext&format=json"
+            )
+            img_resp, wt_resp = await asyncio.gather(
+                session.get(img_url, headers=api_headers, timeout=timeout),
+                session.get(wt_url, headers=api_headers, timeout=timeout),
+            )
+            img_data = await img_resp.json(content_type=None)
+            wt_data  = await wt_resp.json(content_type=None)
+        except Exception as exc:
+            log.warning("Umamusume Fandom API failed for %r: %s", uma_name, exc)
+            return result
+
+    # ── Image URL ──────────────────────────────────────────────────────────────
+    for page in img_data.get("query", {}).get("pages", {}).values():
+        src = page.get("thumbnail", {}).get("source", "")
+        if src:
+            result["image_url"] = re.sub(
+                r'scale-to-width-down/\d+', 'scale-to-width-down/600', src
+            )
+        break
+
+    # ── Wikitext fields ────────────────────────────────────────────────────────
+    wikitext: str = wt_data.get("parse", {}).get("wikitext", {}).get("*", "")
+    if not wikitext:
+        return result
+
+    def _clean(raw: str) -> str:
+        raw = re.sub(r'\[\[(?:[^\]|]+\|)?([^\]]+)\]\]', r'\1', raw)
+        raw = re.sub(r'\[\[([^\]]+)\]\]', r'\1', raw)
+        raw = re.sub(r"'{2,}", '', raw)
+        raw = re.sub(r'<[^>]+>', ' ', raw)
+        raw = re.sub(r'\{\{[^}]+\}\}', '', raw)
+        return raw.strip()
+
+    def _wf(field: str) -> str:
+        m = re.search(
+            rf'^\|\s*{re.escape(field)}\s*=\s*(.+?)(?=\n\s*\||\n\s*\}}|\Z)',
+            wikitext, re.MULTILINE | re.DOTALL | re.I,
+        )
+        return _clean(m.group(1)) if m else ""
+
+    def _wf_list(field: str, max_items: int = 4) -> str:
+        m = re.search(
+            rf'^\|\s*{re.escape(field)}\s*=\s*(.*?)(?=^\|)',
+            wikitext, re.MULTILINE | re.DOTALL | re.I,
+        )
+        if not m:
+            return ""
+        items = []
+        for item in re.findall(r'\*(.+)', m.group(1))[:max_items]:
+            cleaned = _clean(item)
+            if cleaned:
+                items.append(cleaned)
+        return ", ".join(items)
+
+    # Opening quote: {{quote|TEXT|Name}}
+    qm = re.search(r'\{\{quote\s*\|\s*([^|{}\n]+)\|', wikitext, re.I)
+    if qm:
+        result["quote"] = _clean(qm.group(1))
+
+    result["kana"]        = _wf("kana")
+    result["birth_date"]  = _wf("birthDate")
+    result["height"]      = _wf("height")
+    result["team"]        = _wf("team")
+    result["runner_type"] = _wf_list("runner type")
+    result["distance"]    = _wf_list("distance")
+    result["voice_actor"] = _wf("voice actor")
+    result["appearances"] = _wf_list("appearances", max_items=5)
+
+    return result
+
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("horse-racing-bot")
 
@@ -1286,7 +1390,7 @@ HEADERS = {
 
 
 async def fetch(url: str, session: aiohttp.ClientSession) -> str:
-    async with session.get(url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+    async with session.get(url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=8)) as resp:
         resp.raise_for_status()
         return await resp.text()
 
@@ -1297,7 +1401,15 @@ async def search_racing_news(query: str = "G1 horse racing") -> list[dict]:
     """Return up to 8 news items from Google News RSS."""
     encoded = query.replace(" ", "+")
     url = f"https://news.google.com/rss/search?q={encoded}&hl=en-US&gl=US&ceid=US:en"
-    feed = feedparser.parse(url)
+    loop = asyncio.get_event_loop()
+    try:
+        feed = await asyncio.wait_for(
+            loop.run_in_executor(None, feedparser.parse, url),
+            timeout=8,
+        )
+    except Exception as exc:
+        log.warning("News RSS fetch failed for %r: %s", query, exc)
+        return []
     results = []
     for entry in feed.entries[:8]:
         results.append({
@@ -1872,6 +1984,158 @@ async def fetch_horse_equibase(name: str) -> dict:
         profile["recent_races"] = profile["recent_races"][:8]
 
     return profile
+
+
+# ── Horse Profile: Wikipedia (international career stats) ─────────────────────
+
+async def fetch_horse_wikipedia(name: str) -> dict:
+    """
+    Fetch career stats and profile data for a horse from the Wikipedia API.
+    Works for any internationally notable horse — no bot-blocking, no API key needed.
+    Returns a dict with the same keys as fetch_horse_equibase() so _profile_to_compare_data()
+    can consume it unchanged.
+    """
+    base: dict = {
+        "name": name, "url": "", "photo_url": "",
+        "sire": "—", "dam": "—", "trainer": "—", "owner": "—",
+        "color": "—", "sex": "—", "dob": "—",
+        "starts": "—", "wins": "—", "places": "—", "shows": "—",
+        "earnings": "—",
+        "recent_races": [],
+    }
+
+    def _clean(text: str) -> str:
+        """Strip refs, wiki-links, and templates from a raw wikitext value."""
+        text = re.sub(r'<ref[^>]*/>', '', text)
+        text = re.sub(r'<ref[^>]*>.*?</ref>', '', text, flags=re.DOTALL)
+        text = re.sub(r'<br\s*/?>', ' ', text, flags=re.I)
+        text = re.sub(r'<[^>]+>', '', text)
+        text = re.sub(r'\[\[(?:[^\]|]+\|)?([^\]]+)\]\]', r'\1', text)
+        text = re.sub(r'\[\[([^\]]+)\]\]', r'\1', text)
+        def _birth(m: re.Match) -> str:
+            parts = [p.strip() for p in m.group(1).split('|')]
+            if len(parts) >= 3:
+                return f"{parts[0]}-{parts[1].zfill(2)}-{parts[2].zfill(2)}"
+            return parts[0] if parts else ''
+        text = re.sub(r'\{\{birth date[^|]*\|([^}]+)\}\}', _birth, text, flags=re.I)
+        text = re.sub(r'\{\{[^}]+\}\}', '', text)
+        return text.strip()
+
+    def _field(wikitext: str, field: str) -> str:
+        """Extract one infobox field value and clean it."""
+        m = re.search(
+            rf'^\|\s*{re.escape(field)}\s*=\s*(.+?)(?=\n\s*\||\n\s*\}}|\Z)',
+            wikitext, re.MULTILINE | re.DOTALL | re.I,
+        )
+        return _clean(m.group(1)) if m else ""
+
+    def _wikitext_from_query(data: dict) -> tuple[str, str]:
+        """Extract (page_title, wikitext) from an action=query revisions response."""
+        pages = data.get("query", {}).get("pages", {})
+        for page in pages.values():
+            if page.get("pageid", -1) == -1:
+                return "", ""           # missing page
+            title = page.get("title", "")
+            slots = page.get("revisions", [{}])[0].get("slots", {})
+            wt = slots.get("main", {}).get("*", "") or slots.get("*", "")
+            if not wt:
+                # older rvprop=content format
+                wt = page.get("revisions", [{}])[0].get("*", "")
+            return title, wt
+        return "", ""
+
+    async with aiohttp.ClientSession() as session:
+        # ── Fast path: fetch wikitext directly by exact page name (1 round-trip) ──
+        direct_url = (
+            "https://en.wikipedia.org/w/api.php"
+            f"?action=query&titles={urllib.parse.quote(name)}"
+            "&prop=revisions&rvprop=content&rvslots=main&format=json"
+        )
+        page_title = ""
+        wikitext = ""
+        try:
+            raw = await fetch(direct_url, session)
+            page_title, wikitext = _wikitext_from_query(json.loads(raw))
+        except Exception as exc:
+            log.warning("Wikipedia direct fetch failed for %r: %s", name, exc)
+
+        # ── Slow path: search first, then fetch wikitext (2 round-trips) ──────────
+        if not wikitext:
+            search_url = (
+                "https://en.wikipedia.org/w/api.php"
+                f"?action=query&list=search"
+                f"&srsearch={urllib.parse.quote(name + ' racehorse')}"
+                "&format=json&srlimit=5&srnamespace=0"
+            )
+            try:
+                raw = await fetch(search_url, session)
+                results = json.loads(raw).get("query", {}).get("search", [])
+            except Exception as exc:
+                log.warning("Wikipedia search failed for %r: %s", name, exc)
+                return base
+
+            if not results:
+                return base
+
+            name_lower = name.lower()
+            page_title = next(
+                (r["title"] for r in results if name_lower in r["title"].lower()),
+                results[0]["title"],
+            )
+
+            wt_url = (
+                "https://en.wikipedia.org/w/api.php"
+                f"?action=query&titles={urllib.parse.quote(page_title)}"
+                "&prop=revisions&rvprop=content&rvslots=main&format=json"
+            )
+            try:
+                wt_raw = await fetch(wt_url, session)
+                page_title, wikitext = _wikitext_from_query(json.loads(wt_raw))
+            except Exception as exc:
+                log.warning("Wikipedia wikitext fetch failed for %r: %s", page_title, exc)
+                return base
+
+        if not wikitext:
+            return base
+
+        base["url"] = (
+            "https://en.wikipedia.org/wiki/"
+            + urllib.parse.quote((page_title or name).replace(" ", "_"))
+        )
+
+        # record = "6: 5–0–0"  (Wikipedia uses en-dash between W-P-S)
+        record_raw = _field(wikitext, "record")
+        if record_raw and ":" in record_raw:
+            starts_str, rest = record_raw.split(":", 1)
+            base["starts"] = re.sub(r'[^\d]', '', starts_str) or "—"
+            wps_str = re.sub(r'[–—]', '-', rest.strip())
+            wps = [x.strip() for x in wps_str.split("-") if x.strip().isdigit()]
+            if len(wps) >= 1: base["wins"]   = wps[0]
+            if len(wps) >= 2: base["places"] = wps[1]
+            if len(wps) >= 3: base["shows"]  = wps[2]
+
+        earn_raw = _field(wikitext, "earnings")
+        if earn_raw:
+            base["earnings"] = re.split(r'\s{2,}|\(', earn_raw)[0].strip() or "—"
+
+        for key, wiki_key in [
+            ("sire",    "sire"),
+            ("dam",     "dam"),
+            ("trainer", "trainer"),
+            ("owner",   "owner"),
+            ("color",   "colour"),
+            ("sex",     "sex"),
+        ]:
+            val = _field(wikitext, wiki_key) or _field(wikitext, key)
+            if val:
+                base[key] = val[:80]
+
+        foal_raw = _field(wikitext, "foaled") or _field(wikitext, "foaldate")
+        if foal_raw:
+            dm = re.search(r'\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{4}', foal_raw)
+            base["dob"] = dm.group(0) if dm else foal_raw[:20]
+
+    return base
 
 
 # ── Trainer Profile: Racing Post ──────────────────────────────────────────────
@@ -2494,12 +2758,12 @@ def build_compare_embed(
 
     profile_links = []
     if data_a.get("url"):
-        profile_links.append(f"[{name_a} on Equibase]({data_a['url']})")
+        profile_links.append(f"[{name_a} on Wikipedia]({data_a['url']})")
     if data_b.get("url"):
-        profile_links.append(f"[{name_b} on Equibase]({data_b['url']})")
+        profile_links.append(f"[{name_b} on Wikipedia]({data_b['url']})")
     if profile_links:
         profile_embed.add_field(name="🔗 Full Profiles", value=" · ".join(profile_links), inline=False)
-    profile_embed.set_footer(text="Career stats sourced from Equibase — includes retired and deceased horses")
+    profile_embed.set_footer(text="Career stats sourced from Wikipedia · Recent form from Racing Post")
 
     # ── Career stats embed ──────────────────────────────────────────────────────
     stats_embed = discord.Embed(
@@ -2600,7 +2864,7 @@ def build_compare_embed(
 
 
 def build_horse_embed(data: dict) -> discord.Embed:
-    """Profile card for a single horse using Equibase data."""
+    """Profile card for a single horse using Wikipedia + Racing Post data."""
     embed = discord.Embed(
         title=f"🐴 {data['name']}",
         url=data.get("url", ""),
@@ -2642,27 +2906,26 @@ def build_horse_embed(data: dict) -> discord.Embed:
     # Recent races
     races = data.get("recent_races", [])
     if races:
-        lines = ["`Date      ` `Track     ` `Fin` `Distance ` `Odds`"]
-        lines.append("─" * 55)
+        lines = ["`Date      ` `Track     ` `Fin` `Distance `"]
+        lines.append("─" * 50)
         for r in races[:6]:
-            fin = r["finish"]
+            fin = str(r.get("finish", "—"))
             medal = (
                 "🥇" if fin in ("1", "1st") else
                 "🥈" if fin in ("2", "2nd") else
                 "🥉" if fin in ("3", "3rd") else "  "
             )
             lines.append(
-                f"`{r['date'][:10]:<10}` "
-                f"`{r['track'][:10]:<10}` "
+                f"`{str(r.get('date','—'))[:10]:<10}` "
+                f"`{str(r.get('track','—'))[:10]:<10}` "
                 f"`{fin[:3]:<3}` {medal} "
-                f"`{r['distance'][:8]:<8}` "
-                f"`{r['odds'][:6]:<6}`"
+                f"`{str(r.get('distance','—'))[:8]:<8}`"
             )
         embed.add_field(name="📋 Recent Races", value="\n".join(lines), inline=False)
     else:
         embed.add_field(name="📋 Recent Races", value="No recent races found.", inline=False)
 
-    embed.set_footer(text="Source: Equibase  ·  /horse <name>")
+    embed.set_footer(text="Source: Wikipedia · Racing Post  ·  /horse <name>")
     return embed
 
 
@@ -3099,32 +3362,36 @@ async def cmd_countdown(
 @app_commands.describe(
     horse_a="Full name of the first horse",
     horse_b="Full name of the second horse",
-    source="Data source: 'equibase' (US, default) or 'racingpost' (UK/IRE/international)",
 )
 async def cmd_compare(
     interaction: discord.Interaction,
     horse_a: str,
     horse_b: str,
-    source: str = "equibase",
 ):
     await interaction.response.defer()
-    source = source.lower().strip()
 
     await interaction.followup.send(
-        f"⏳ Searching Equibase for **{horse_a}** and **{horse_b}**…\n"
-        "This works for active, retired, and deceased horses. May take a few seconds."
+        f"⏳ Looking up **{horse_a}** and **{horse_b}**…\n"
+        "Checking Wikipedia + Racing Post — works for active, retired, and international horses."
     )
 
-    # Always use the full Equibase profile (fetch_horse_equibase) rather than
-    # the history-only scraper — the profile page carries official career stats
-    # even for retired/deceased horses that have no recent entries.
-    raw_a, raw_b = await asyncio.gather(
-        fetch_horse_equibase(horse_a),
-        fetch_horse_equibase(horse_b),
+    # Wikipedia = primary source for career stats + profile data (no bot-blocking)
+    # Racing Post = secondary source for recent race form table
+    wiki_a, wiki_b, rp_a, rp_b = await asyncio.gather(
+        fetch_horse_wikipedia(horse_a),
+        fetch_horse_wikipedia(horse_b),
+        fetch_horse_history_racingpost(horse_a),
+        fetch_horse_history_racingpost(horse_b),
     )
 
-    data_a = _profile_to_compare_data(raw_a)
-    data_b = _profile_to_compare_data(raw_b)
+    def _merge(wiki: dict, rp: dict) -> dict:
+        merged = dict(wiki)
+        if rp.get("races"):
+            merged["recent_races"] = rp["races"]
+        return merged
+
+    data_a = _profile_to_compare_data(_merge(wiki_a, rp_a))
+    data_b = _profile_to_compare_data(_merge(wiki_b, rp_b))
     matchups = _find_head_to_head(data_a, data_b)
 
     embeds = build_compare_embed(data_a, data_b, matchups)
@@ -3250,22 +3517,43 @@ async def cmd_result(
         )
 
 
-@tree.command(name="horse", description="Full profile, career stats and recent form for a horse (Equibase)")
+@tree.command(name="horse", description="Full profile, career stats and recent form for a horse (Wikipedia + Racing Post)")
 @app_commands.describe(name="Horse's registered name, e.g. 'Justify' or 'Enable'")
 async def cmd_horse(interaction: discord.Interaction, name: str):
     await interaction.response.defer()
-    await interaction.followup.send(f"⏳ Looking up **{name}** on Equibase…")
-    data = await fetch_horse_equibase(name)
+    await interaction.followup.send(
+        f"⏳ Looking up **{name}** on Wikipedia and Racing Post…"
+    )
 
-    embed = build_horse_embed(data)
+    # Check for Umamusume character match (local, instant)
+    uma = find_umamusume(name)
 
-    # Pull recent news in parallel
-    news = await fetch_horse_news(name)
+    # Fetch all sources in parallel
+    gather_tasks: list = [
+        fetch_horse_wikipedia(name),
+        fetch_horse_history_racingpost(name),
+        fetch_horse_news(name),
+    ]
+    if uma:
+        gather_tasks.append(fetch_umamusume_fandom(uma["uma_name"]))
+
+    results = await asyncio.gather(*gather_tasks)
+    wiki_data: dict  = results[0]
+    rp_data:   dict  = results[1]
+    news:      list  = results[2]
+    uma_wiki:  dict | None = results[3] if uma else None
+
+    # Merge: Wikipedia provides profile + stats; Racing Post provides recent races
+    merged = dict(wiki_data)
+    if rp_data.get("races"):
+        merged["recent_races"] = rp_data["races"]
+
+    embed = build_horse_embed(merged)
     embeds_to_send = [embed]
 
     if news:
         news_embed = discord.Embed(
-            title=f"📰 News — {data['name']}",
+            title=f"📰 News — {merged['name']}",
             color=discord.Color.red(),
             timestamp=datetime.now(timezone.utc),
         )
@@ -3281,26 +3569,17 @@ async def cmd_horse(interaction: discord.Interaction, name: str):
     await interaction.followup.send(embeds=embeds_to_send)
 
     # ── Umamusume: Pretty Derby crossover check ────────────────────────────────
-    uma = find_umamusume(name)
     if uma:
         teaser = discord.Embed(
             title=f"{uma['emoji']}  {uma['uma_name']} — Umamusume: Pretty Derby",
             description=(
-                f"**{data['name']}** has an Umamusume: Pretty Derby counterpart character!\n\n"
+                f"**{merged['name']}** has an Umamusume: Pretty Derby counterpart!\n\n"
                 f"{uma['personality']}"
             ),
             color=discord.Color.from_rgb(255, 182, 193),
         )
-        teaser.add_field(
-            name="🏆 Real Racing Record",
-            value=uma["real_record"],
-            inline=False,
-        )
-        teaser.add_field(
-            name="📖 Story Arc",
-            value=uma["story_arc"],
-            inline=False,
-        )
+        teaser.add_field(name="🏆 Real Racing Record", value=uma["real_record"], inline=False)
+        teaser.add_field(name="📖 Story Arc",          value=uma["story_arc"],   inline=False)
         teaser.add_field(
             name="✨ Fun Facts",
             value="\n".join(f"• {f}" for f in uma["fun_facts"][:3]),
@@ -3309,7 +3588,10 @@ async def cmd_horse(interaction: discord.Interaction, name: str):
         teaser.set_footer(
             text=f"Use /umamusume name:{name} to get the full character profile and ask lore questions!"
         )
-        if uma.get("icon_url"):
+        # Use official Cygames wiki image if retrieved
+        if uma_wiki and uma_wiki.get("image_url"):
+            teaser.set_thumbnail(url=uma_wiki["image_url"])
+        elif uma.get("icon_url"):
             teaser.set_thumbnail(url=uma["icon_url"])
         await interaction.followup.send(embed=teaser)
 
@@ -3354,43 +3636,90 @@ async def cmd_umamusume(interaction: discord.Interaction, name: str, question: s
         )
         return
 
+    # Fetch live wiki data (official image + game stats) in parallel with local data
+    wiki = await fetch_umamusume_fandom(uma["uma_name"])
+
     # ── Main profile embed ────────────────────────────────────────────────────
+    description = uma["personality"]
+    if wiki.get("quote"):
+        description = f"*\"{wiki['quote']}\"*\n\n{description}"
+
     embed = discord.Embed(
         title=f"{uma['emoji']}  {uma['uma_name']}  —  Umamusume: Pretty Derby",
-        description=uma["personality"],
+        description=description,
         color=discord.Color.from_rgb(255, 182, 193),
         timestamp=datetime.now(timezone.utc),
     )
+
+    # Official character art from Cygames / Umamusume Wiki
+    if wiki.get("image_url"):
+        embed.set_thumbnail(url=wiki["image_url"])
+    elif uma.get("icon_url"):
+        embed.set_thumbnail(url=uma["icon_url"])
+
+    # Row 1 — identity
+    if wiki.get("birth_date") and uma.get("born"):
+        dob_val = f"{wiki['birth_date']}, {uma['born']}"
+    elif wiki.get("birth_date"):
+        dob_val = wiki["birth_date"]
+    else:
+        dob_val = uma.get("born", "—")
+
     embed.add_field(name="🐴 Real Horse", value=uma["real_name"], inline=True)
-    embed.add_field(name="📅 Born", value=uma.get("born", "—"), inline=True)
-    embed.add_field(name="\u200b", value="\u200b", inline=True)
+    embed.add_field(name="📅 Born", value=dob_val, inline=True)
     embed.add_field(
-        name="🏆 Real Racing Record",
-        value=uma["real_record"],
-        inline=False,
+        name="🇯🇵 Japanese",
+        value=wiki["kana"] if wiki.get("kana") else "—",
+        inline=True,
     )
-    embed.add_field(
-        name="📖 Story Arc",
-        value=uma["story_arc"],
-        inline=False,
-    )
+
+    # Row 2 — game stats (only shown if wiki data was retrieved)
+    if wiki.get("team") or wiki.get("runner_type") or wiki.get("distance"):
+        embed.add_field(name="🎮 Team", value=wiki.get("team") or "—", inline=True)
+        embed.add_field(name="🏃 Runner Type", value=wiki.get("runner_type") or "—", inline=True)
+        embed.add_field(name="📏 Distance", value=wiki.get("distance") or "—", inline=True)
+
+    # Racing record & story
+    embed.add_field(name="🏆 Real Racing Record", value=uma["real_record"], inline=False)
+    embed.add_field(name="📖 Story Arc", value=uma["story_arc"], inline=False)
     embed.add_field(
         name="✨ Fun Facts",
         value="\n".join(f"• {f}" for f in uma["fun_facts"]),
         inline=False,
     )
 
+    # Voice actor + appearances
+    info_lines = []
+    if wiki.get("voice_actor"):
+        info_lines.append(f"🎤 **Voice:** {wiki['voice_actor']}")
+    if wiki.get("height"):
+        info_lines.append(f"📐 **Height:** {wiki['height']}")
+    if wiki.get("appearances"):
+        info_lines.append(f"📺 **Appears in:** {wiki['appearances']}")
+    if info_lines:
+        embed.add_field(name="📋 Character Info", value="\n".join(info_lines), inline=False)
+
+    # Lore Q&A prompt + links
     topics = " · ".join(f"`{k}`" for k in uma.get("lore_qa", {}))
+    link_parts = []
+    if wiki.get("wiki_url"):
+        link_parts.append(f"[Umamusume Wiki]({wiki['wiki_url']})")
+    link_parts.append("[Global Site](https://umamusume.com)")
+    link_parts.append("[Japan Site](https://umamusume.jp)")
     embed.add_field(
         name="💬 Ask a Lore Question",
-        value=f"Use `/umamusume name:{uma['real_name'].lower()} question:<your question>`\n"
-              f"Topics I know about: {topics}",
+        value=(
+            f"Use `/umamusume name:{uma['real_name'].lower()} question:<your question>`\n"
+            f"Topics: {topics}\n"
+            + " · ".join(link_parts)
+        ),
         inline=False,
     )
-    embed.set_footer(text="Data sourced from Umamusume: Pretty Derby by Cygames · For entertainment only")
 
-    if uma.get("icon_url"):
-        embed.set_thumbnail(url=uma["icon_url"])
+    embed.set_footer(
+        text="© Cygames, Inc. · Umamusume: Pretty Derby · "
+             "Character images & data from Umamusume Wiki"
+    )
 
     await interaction.followup.send(embed=embed)
 
@@ -3402,7 +3731,12 @@ async def cmd_umamusume(interaction: discord.Interaction, name: str, question: s
             color=discord.Color.from_rgb(200, 150, 220),
         )
         qa_embed.add_field(name=f"❓ {question}", value=answer, inline=False)
-        qa_embed.set_footer(text="Ask another question with /umamusume name:... question:...")
+        if wiki.get("image_url"):
+            qa_embed.set_thumbnail(url=wiki["image_url"])
+        qa_embed.set_footer(
+            text="© Cygames, Inc. · Umamusume: Pretty Derby · "
+                 "Ask another question with /umamusume name:... question:..."
+        )
         await interaction.followup.send(embed=qa_embed)
 
 
@@ -3818,31 +4152,38 @@ async def prefix_odds(ctx: commands.Context, source: str, track: str, date: str 
 
 
 @bot.command(name="compare")
-async def prefix_compare(ctx: commands.Context, source: str, *, horses: str):
+async def prefix_compare(ctx: commands.Context, *, horses: str):
     """
-    !compare <equibase|racingpost> <Horse A> vs <Horse B>
-    Example: !compare equibase Justify vs American Pharoah
+    !compare <Horse A> vs <Horse B>
+    Example: !compare Justify vs American Pharoah
     """
     if " vs " not in horses.lower():
         await ctx.send(
-            "Usage: `!compare <equibase|racingpost> <Horse A> vs <Horse B>`\n"
-            "Example: `!compare equibase Justify vs American Pharoah`"
+            "Usage: `!compare <Horse A> vs <Horse B>`\n"
+            "Example: `!compare Justify vs American Pharoah`"
         )
         return
 
     split_idx = horses.lower().index(" vs ")
     horse_a = horses[:split_idx].strip()
     horse_b = horses[split_idx + 4:].strip()
-    source = source.lower().strip()
-
-    fetch_fn = (
-        fetch_horse_history_equibase
-        if source == "equibase"
-        else fetch_horse_history_racingpost
-    )
 
     async with ctx.typing():
-        data_a, data_b = await asyncio.gather(fetch_fn(horse_a), fetch_fn(horse_b))
+        wiki_a, wiki_b, rp_a, rp_b = await asyncio.gather(
+            fetch_horse_wikipedia(horse_a),
+            fetch_horse_wikipedia(horse_b),
+            fetch_horse_history_racingpost(horse_a),
+            fetch_horse_history_racingpost(horse_b),
+        )
+
+        def _merge(wiki: dict, rp: dict) -> dict:
+            merged = dict(wiki)
+            if rp.get("races"):
+                merged["recent_races"] = rp["races"]
+            return merged
+
+        data_a = _profile_to_compare_data(_merge(wiki_a, rp_a))
+        data_b = _profile_to_compare_data(_merge(wiki_b, rp_b))
         matchups = _find_head_to_head(data_a, data_b)
         embeds = build_compare_embed(data_a, data_b, matchups)
 
