@@ -1,4 +1,4 @@
-# 🏇 Horse Racing Discord Bot
+# 🏇 Honse Racing Discord Bot
 
 A Discord bot that brings real-world horse racing data straight to your server — upcoming G1 race countdowns, race cards, live odds, official results, trainer and jockey stats, auto result notifications, and an Umamusume: Pretty Derby crossover feature.
 
