@@ -709,6 +709,441 @@ KNOWN_G1_RACES: list[dict] = [
         "purse": "$12,000,000",
         "distance": "2,000m",
     },
+    {
+        "name": "Irish Derby",
+        "date": datetime(2025, 6, 28, 16, 0, tzinfo=timezone.utc),
+        "track": "The Curragh",
+        "country": "Ireland",
+        "purse": "€1,500,000",
+        "distance": "1-1/2 miles",
+    },
+    {
+        "name": "Irish Champion Stakes",
+        "date": datetime(2025, 9, 13, 15, 25, tzinfo=timezone.utc),
+        "track": "Leopardstown",
+        "country": "Ireland",
+        "purse": "€1,500,000",
+        "distance": "1-1/4 miles",
+    },
+    {
+        "name": "Hong Kong Cup",
+        "date": datetime(2025, 12, 14, 9, 30, tzinfo=timezone.utc),
+        "track": "Sha Tin Racecourse",
+        "country": "Hong Kong",
+        "purse": "HK$28,000,000",
+        "distance": "2,000m",
+    },
+    {
+        "name": "Hong Kong Mile",
+        "date": datetime(2025, 12, 14, 8, 30, tzinfo=timezone.utc),
+        "track": "Sha Tin Racecourse",
+        "country": "Hong Kong",
+        "purse": "HK$28,000,000",
+        "distance": "1,600m",
+    },
+    {
+        "name": "Queen's Plate",
+        "date": datetime(2025, 8, 10, 18, 30, tzinfo=timezone.utc),
+        "track": "Woodbine Racetrack",
+        "country": "Canada",
+        "purse": "CAD $1,000,000",
+        "distance": "1-1/4 miles",
+    },
+    {
+        "name": "Canadian International",
+        "date": datetime(2025, 10, 19, 18, 0, tzinfo=timezone.utc),
+        "track": "Woodbine Racetrack",
+        "country": "Canada",
+        "purse": "CAD $1,500,000",
+        "distance": "1-1/2 miles",
+    },
+    {
+        "name": "Grosser Preis von Baden",
+        "date": datetime(2025, 8, 31, 14, 30, tzinfo=timezone.utc),
+        "track": "Baden-Baden",
+        "country": "Germany",
+        "purse": "€500,000",
+        "distance": "2,400m",
+    },
+    {
+        "name": "Deutsches Derby",
+        "date": datetime(2025, 7, 6, 14, 0, tzinfo=timezone.utc),
+        "track": "Hamburg-Horn",
+        "country": "Germany",
+        "purse": "€750,000",
+        "distance": "2,400m",
+    },
+    {
+        "name": "Singapore Airlines International Cup",
+        "date": datetime(2025, 5, 18, 10, 0, tzinfo=timezone.utc),
+        "track": "Kranji Racecourse",
+        "country": "Singapore",
+        "purse": "S$3,000,000",
+        "distance": "2,000m",
+    },
+    {
+        "name": "Gran Premio di Milano",
+        "date": datetime(2025, 6, 22, 14, 0, tzinfo=timezone.utc),
+        "track": "Ippodromo del Galoppo",
+        "country": "Italy",
+        "purse": "€500,000",
+        "distance": "2,400m",
+    },
+    {
+        "name": "Saudi Cup",
+        "date": datetime(2026, 2, 21, 18, 0, tzinfo=timezone.utc),
+        "track": "King Abdulaziz Racecourse",
+        "country": "Saudi Arabia",
+        "purse": "$20,000,000",
+        "distance": "1,800m",
+    },
+    {
+        "name": "Vodacom Durban July",
+        "date": datetime(2025, 7, 5, 13, 0, tzinfo=timezone.utc),
+        "track": "Greyville Racecourse",
+        "country": "South Africa",
+        "purse": "R5,000,000",
+        "distance": "2,200m",
+    },
+    {
+        "name": "Gran Premio Nacional",
+        "date": datetime(2025, 11, 2, 18, 0, tzinfo=timezone.utc),
+        "track": "Hipódromo de Palermo",
+        "country": "Argentina",
+        "purse": "ARS $50,000,000",
+        "distance": "2,500m",
+    },
+]
+
+# ── Known G2 Races ─────────────────────────────────────────────────────────────
+# Grade 2 races across major racing nations. Update dates each season as needed.
+
+KNOWN_G2_RACES: list[dict] = [
+    # USA
+    {
+        "name": "San Felipe Stakes",
+        "date": datetime(2026, 3, 7, 22, 30, tzinfo=timezone.utc),
+        "track": "Santa Anita Park",
+        "country": "USA",
+        "purse": "$400,000",
+        "distance": "1-1/16 miles",
+    },
+    {
+        "name": "Fountain of Youth Stakes",
+        "date": datetime(2026, 3, 7, 21, 0, tzinfo=timezone.utc),
+        "track": "Gulfstream Park",
+        "country": "USA",
+        "purse": "$400,000",
+        "distance": "1-1/16 miles",
+    },
+    {
+        "name": "Louisiana Derby",
+        "date": datetime(2026, 3, 28, 21, 30, tzinfo=timezone.utc),
+        "track": "Fair Grounds",
+        "country": "USA",
+        "purse": "$1,000,000",
+        "distance": "1-3/16 miles",
+    },
+    {
+        "name": "Wood Memorial",
+        "date": datetime(2026, 4, 4, 18, 30, tzinfo=timezone.utc),
+        "track": "Aqueduct Racetrack",
+        "country": "USA",
+        "purse": "$750,000",
+        "distance": "1-1/8 miles",
+    },
+    {
+        "name": "Rebel Stakes",
+        "date": datetime(2026, 3, 14, 21, 30, tzinfo=timezone.utc),
+        "track": "Oaklawn Park",
+        "country": "USA",
+        "purse": "$1,000,000",
+        "distance": "1-1/16 miles",
+    },
+    {
+        "name": "Champagne Stakes",
+        "date": datetime(2025, 10, 4, 18, 0, tzinfo=timezone.utc),
+        "track": "Belmont Park",
+        "country": "USA",
+        "purse": "$500,000",
+        "distance": "1 mile",
+    },
+    {
+        "name": "Beldame Stakes",
+        "date": datetime(2025, 10, 4, 18, 45, tzinfo=timezone.utc),
+        "track": "Belmont Park",
+        "country": "USA",
+        "purse": "$500,000",
+        "distance": "1-1/8 miles",
+    },
+    # UK
+    {
+        "name": "Dante Stakes",
+        "date": datetime(2026, 5, 14, 14, 35, tzinfo=timezone.utc),
+        "track": "York Racecourse",
+        "country": "UK",
+        "purse": "£200,000",
+        "distance": "1-1/4 miles",
+    },
+    {
+        "name": "Lockinge Stakes",
+        "date": datetime(2026, 5, 16, 15, 5, tzinfo=timezone.utc),
+        "track": "Newbury Racecourse",
+        "country": "UK",
+        "purse": "£300,000",
+        "distance": "1 mile",
+    },
+    {
+        "name": "Hardwicke Stakes",
+        "date": datetime(2026, 6, 20, 16, 0, tzinfo=timezone.utc),
+        "track": "Royal Ascot",
+        "country": "UK",
+        "purse": "£300,000",
+        "distance": "1-1/2 miles",
+    },
+    {
+        "name": "Summer Mile",
+        "date": datetime(2025, 7, 5, 15, 35, tzinfo=timezone.utc),
+        "track": "Ascot Racecourse",
+        "country": "UK",
+        "purse": "£200,000",
+        "distance": "1 mile",
+    },
+    # Ireland
+    {
+        "name": "Gallinule Stakes",
+        "date": datetime(2026, 5, 17, 15, 30, tzinfo=timezone.utc),
+        "track": "The Curragh",
+        "country": "Ireland",
+        "purse": "€75,000",
+        "distance": "1-1/4 miles",
+    },
+    {
+        "name": "Mooresbridge Stakes",
+        "date": datetime(2026, 5, 4, 15, 0, tzinfo=timezone.utc),
+        "track": "The Curragh",
+        "country": "Ireland",
+        "purse": "€75,000",
+        "distance": "1-1/4 miles",
+    },
+    # France
+    {
+        "name": "Prix du Muguet",
+        "date": datetime(2026, 5, 3, 14, 30, tzinfo=timezone.utc),
+        "track": "Saint-Cloud",
+        "country": "France",
+        "purse": "€100,000",
+        "distance": "1,600m",
+    },
+    {
+        "name": "Prix Gontaut-Biron",
+        "date": datetime(2025, 8, 14, 15, 0, tzinfo=timezone.utc),
+        "track": "Deauville",
+        "country": "France",
+        "purse": "€100,000",
+        "distance": "2,000m",
+    },
+    # Japan
+    {
+        "name": "Kyoto Kinen",
+        "date": datetime(2026, 2, 22, 6, 25, tzinfo=timezone.utc),
+        "track": "Kyoto Racecourse",
+        "country": "Japan",
+        "purse": "¥80,000,000",
+        "distance": "2,200m",
+    },
+    {
+        "name": "Nikkei Sho",
+        "date": datetime(2026, 3, 28, 6, 45, tzinfo=timezone.utc),
+        "track": "Nakayama Racecourse",
+        "country": "Japan",
+        "purse": "¥67,000,000",
+        "distance": "2,500m",
+    },
+    # Australia
+    {
+        "name": "Hobartville Stakes",
+        "date": datetime(2026, 2, 28, 5, 30, tzinfo=timezone.utc),
+        "track": "Rosehill Gardens",
+        "country": "Australia",
+        "purse": "AUD $500,000",
+        "distance": "1,400m",
+    },
+    {
+        "name": "Peter Young Stakes",
+        "date": datetime(2026, 2, 21, 5, 0, tzinfo=timezone.utc),
+        "track": "Caulfield Racecourse",
+        "country": "Australia",
+        "purse": "AUD $500,000",
+        "distance": "1,800m",
+    },
+    # Hong Kong
+    {
+        "name": "Chairman's Trophy",
+        "date": datetime(2025, 11, 9, 8, 30, tzinfo=timezone.utc),
+        "track": "Sha Tin Racecourse",
+        "country": "Hong Kong",
+        "purse": "HK$10,000,000",
+        "distance": "1,600m",
+    },
+]
+
+# ── Known G3 Races ─────────────────────────────────────────────────────────────
+# Grade 3 races across major racing nations. Update dates each season as needed.
+
+KNOWN_G3_RACES: list[dict] = [
+    # USA
+    {
+        "name": "Holy Bull Stakes",
+        "date": datetime(2026, 2, 7, 18, 30, tzinfo=timezone.utc),
+        "track": "Gulfstream Park",
+        "country": "USA",
+        "purse": "$200,000",
+        "distance": "1-1/16 miles",
+    },
+    {
+        "name": "Risen Star Stakes",
+        "date": datetime(2026, 2, 21, 19, 0, tzinfo=timezone.utc),
+        "track": "Fair Grounds",
+        "country": "USA",
+        "purse": "$400,000",
+        "distance": "1-1/16 miles",
+    },
+    {
+        "name": "Jerome Stakes",
+        "date": datetime(2026, 1, 1, 18, 0, tzinfo=timezone.utc),
+        "track": "Aqueduct Racetrack",
+        "country": "USA",
+        "purse": "$150,000",
+        "distance": "1 mile",
+    },
+    {
+        "name": "Gotham Stakes",
+        "date": datetime(2026, 3, 7, 18, 0, tzinfo=timezone.utc),
+        "track": "Aqueduct Racetrack",
+        "country": "USA",
+        "purse": "$250,000",
+        "distance": "1 mile",
+    },
+    {
+        "name": "Hutcheson Stakes",
+        "date": datetime(2026, 2, 7, 17, 30, tzinfo=timezone.utc),
+        "track": "Gulfstream Park",
+        "country": "USA",
+        "purse": "$100,000",
+        "distance": "7 furlongs",
+    },
+    {
+        "name": "Spiral Stakes",
+        "date": datetime(2026, 3, 28, 20, 0, tzinfo=timezone.utc),
+        "track": "Turfway Park",
+        "country": "USA",
+        "purse": "$500,000",
+        "distance": "1-1/8 miles",
+    },
+    # UK
+    {
+        "name": "Fred Darling Stakes",
+        "date": datetime(2026, 4, 18, 14, 0, tzinfo=timezone.utc),
+        "track": "Newbury Racecourse",
+        "country": "UK",
+        "purse": "£70,000",
+        "distance": "7 furlongs",
+    },
+    {
+        "name": "Brigadier Gerard Stakes",
+        "date": datetime(2026, 5, 23, 15, 5, tzinfo=timezone.utc),
+        "track": "Sandown Park",
+        "country": "UK",
+        "purse": "£100,000",
+        "distance": "1-1/4 miles",
+    },
+    {
+        "name": "Gordon Stakes",
+        "date": datetime(2025, 7, 31, 15, 0, tzinfo=timezone.utc),
+        "track": "Goodwood Racecourse",
+        "country": "UK",
+        "purse": "£75,000",
+        "distance": "1-1/2 miles",
+    },
+    # Ireland
+    {
+        "name": "Alleged Stakes",
+        "date": datetime(2025, 9, 14, 15, 45, tzinfo=timezone.utc),
+        "track": "Leopardstown",
+        "country": "Ireland",
+        "purse": "€45,000",
+        "distance": "1-1/2 miles",
+    },
+    {
+        "name": "Round Tower Stakes",
+        "date": datetime(2025, 9, 14, 14, 30, tzinfo=timezone.utc),
+        "track": "The Curragh",
+        "country": "Ireland",
+        "purse": "€45,000",
+        "distance": "6 furlongs",
+    },
+    # France
+    {
+        "name": "Prix de Barbeville",
+        "date": datetime(2026, 4, 12, 14, 0, tzinfo=timezone.utc),
+        "track": "Longchamp",
+        "country": "France",
+        "purse": "€80,000",
+        "distance": "2,800m",
+    },
+    {
+        "name": "Prix Corrida",
+        "date": datetime(2026, 5, 17, 14, 30, tzinfo=timezone.utc),
+        "track": "Saint-Cloud",
+        "country": "France",
+        "purse": "€75,000",
+        "distance": "2,000m",
+    },
+    # Japan
+    {
+        "name": "Nakayama Gold Cup",
+        "date": datetime(2026, 1, 17, 6, 30, tzinfo=timezone.utc),
+        "track": "Nakayama Racecourse",
+        "country": "Japan",
+        "purse": "¥47,500,000",
+        "distance": "2,000m",
+    },
+    {
+        "name": "Kyoto Jubilee Stakes",
+        "date": datetime(2026, 4, 12, 6, 25, tzinfo=timezone.utc),
+        "track": "Kyoto Racecourse",
+        "country": "Japan",
+        "purse": "¥47,500,000",
+        "distance": "2,200m",
+    },
+    # Australia
+    {
+        "name": "Autumn Classic",
+        "date": datetime(2026, 3, 21, 5, 30, tzinfo=timezone.utc),
+        "track": "Rosehill Gardens",
+        "country": "Australia",
+        "purse": "AUD $200,000",
+        "distance": "2,000m",
+    },
+    # Germany
+    {
+        "name": "Grosser Preis der Wirtschaft",
+        "date": datetime(2025, 7, 27, 14, 0, tzinfo=timezone.utc),
+        "track": "Düsseldorf Racecourse",
+        "country": "Germany",
+        "purse": "€80,000",
+        "distance": "2,400m",
+    },
+    # South Africa
+    {
+        "name": "Daily News 2000",
+        "date": datetime(2025, 12, 27, 12, 0, tzinfo=timezone.utc),
+        "track": "Greyville Racecourse",
+        "country": "South Africa",
+        "purse": "R1,000,000",
+        "distance": "2,000m",
+    },
 ]
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -734,22 +1169,43 @@ def format_countdown(dt: datetime) -> str:
 
 
 COUNTRY_CHOICES = [
-    app_commands.Choice(name="🌍 All Countries", value="all"),
-    app_commands.Choice(name="🇺🇸 USA",          value="USA"),
-    app_commands.Choice(name="🇬🇧 UK / Ireland", value="UK"),
-    app_commands.Choice(name="🇫🇷 France",        value="France"),
-    app_commands.Choice(name="🇯🇵 Japan",          value="Japan"),
-    app_commands.Choice(name="🇦🇺 Australia",      value="Australia"),
-    app_commands.Choice(name="🇦🇪 UAE",            value="UAE"),
+    app_commands.Choice(name="🌍 All Countries",   value="all"),
+    app_commands.Choice(name="🇺🇸 USA",             value="USA"),
+    app_commands.Choice(name="🇬🇧 UK",              value="UK"),
+    app_commands.Choice(name="🇮🇪 Ireland",          value="Ireland"),
+    app_commands.Choice(name="🇫🇷 France",           value="France"),
+    app_commands.Choice(name="🇯🇵 Japan",            value="Japan"),
+    app_commands.Choice(name="🇦🇺 Australia",        value="Australia"),
+    app_commands.Choice(name="🇦🇪 UAE",              value="UAE"),
+    app_commands.Choice(name="🇭🇰 Hong Kong",        value="Hong Kong"),
+    app_commands.Choice(name="🇨🇦 Canada",           value="Canada"),
+    app_commands.Choice(name="🇩🇪 Germany",          value="Germany"),
+    app_commands.Choice(name="🇸🇬 Singapore",        value="Singapore"),
+    app_commands.Choice(name="🇮🇹 Italy",            value="Italy"),
+    app_commands.Choice(name="🇸🇦 Saudi Arabia",     value="Saudi Arabia"),
+    app_commands.Choice(name="🇿🇦 South Africa",     value="South Africa"),
+    app_commands.Choice(name="🇦🇷 Argentina",        value="Argentina"),
 ]
 
 
-def upcoming_g1s(limit: int = 10, country: str = "all") -> list[dict]:
+def _filter_races(races: list[dict], country: str = "all") -> list[dict]:
     now = datetime.now(timezone.utc)
-    future = [r for r in KNOWN_G1_RACES if r["date"] > now]
+    future = [r for r in races if r["date"] > now]
     if country and country.lower() != "all":
         future = [r for r in future if r["country"].lower() == country.lower()]
-    return sorted(future, key=lambda r: r["date"])[:limit]
+    return sorted(future, key=lambda r: r["date"])
+
+
+def upcoming_g1s(limit: int = 10, country: str = "all") -> list[dict]:
+    return _filter_races(KNOWN_G1_RACES, country)[:limit]
+
+
+def upcoming_g2s(limit: int = 10, country: str = "all") -> list[dict]:
+    return _filter_races(KNOWN_G2_RACES, country)[:limit]
+
+
+def upcoming_g3s(limit: int = 10, country: str = "all") -> list[dict]:
+    return _filter_races(KNOWN_G3_RACES, country)[:limit]
 
 
 # ── Web fetching ──────────────────────────────────────────────────────────────
@@ -1559,6 +2015,60 @@ def _find_head_to_head(data_a: dict, data_b: dict) -> list[dict]:
     return matchups
 
 
+def _profile_to_compare_data(profile: dict) -> dict:
+    """
+    Convert a fetch_horse_equibase() full-profile result into the dict format
+    that build_compare_embed() and _find_head_to_head() expect.
+
+    This lets /compare work for ANY horse — active, retired, or deceased —
+    because Equibase keeps career stats on every horse's profile page even
+    after they stop racing.
+    """
+    def _safe_int(val) -> int:
+        try:
+            return int(str(val).replace(",", "").strip())
+        except (ValueError, TypeError, AttributeError):
+            return 0
+
+    total  = _safe_int(profile.get("starts", 0))
+    wins   = _safe_int(profile.get("wins", 0))
+    places = _safe_int(profile.get("places", 0))
+    shows  = _safe_int(profile.get("shows", 0))
+
+    # If official career stats are present, use them directly.
+    # Otherwise fall back to computing from scraped recent races.
+    if total > 0:
+        stats = {
+            "total":      total,
+            "wins":       wins,
+            "places":     places,
+            "shows":      shows,
+            "win_pct":    round(wins   / total * 100, 1),
+            "place_pct":  round(places / total * 100, 1),
+            "show_pct":   round(shows  / total * 100, 1),
+            "avg_finish": None,
+        }
+    else:
+        recent = profile.get("recent_races", [])
+        stats = _compute_stats(recent)
+
+    return {
+        "name":     profile.get("name", "Unknown"),
+        "url":      profile.get("url", ""),
+        "races":    profile.get("recent_races", []),
+        "stats":    stats,
+        # Extra fields surfaced in the enriched compare embed
+        "sire":     profile.get("sire", "—"),
+        "dam":      profile.get("dam", "—"),
+        "dob":      profile.get("dob", "—"),
+        "color":    profile.get("color", "—"),
+        "sex":      profile.get("sex", "—"),
+        "trainer":  profile.get("trainer", "—"),
+        "owner":    profile.get("owner", "—"),
+        "earnings": profile.get("earnings", "—"),
+    }
+
+
 # ── Image helpers ─────────────────────────────────────────────────────────────
 
 def _image_for_race(name: str) -> str:
@@ -1590,13 +2100,22 @@ def _image_for_person(name: str, images_dict: dict) -> str:
 
 # ── Embeds ────────────────────────────────────────────────────────────────────
 
-def build_g1_embed(race: dict, show_countdown: bool = True) -> discord.Embed:
+def build_g1_embed(race: dict, show_countdown: bool = True, grade: str = "G1") -> discord.Embed:
     dt: datetime = race["date"]
     unix_ts = int(dt.timestamp())
 
+    grade_label = race.get("grade", grade)
+    grade_colors = {
+        "G1": discord.Color.gold(),
+        "G2": discord.Color.from_rgb(192, 192, 192),   # silver
+        "G3": discord.Color.from_rgb(180, 110, 50),    # bronze
+    }
+    grade_emoji = {"G1": "🥇", "G2": "🥈", "G3": "🥉"}.get(grade_label, "🏇")
+    color = grade_colors.get(grade_label, discord.Color.gold())
+
     embed = discord.Embed(
-        title=f"🏇 {race['name']}",
-        color=discord.Color.gold(),
+        title=f"{grade_emoji} [{grade_label}] {race['name']}",
+        color=color,
     )
     embed.add_field(name="📍 Track", value=f"{race['track']}, {race['country']}", inline=True)
     embed.add_field(name="📏 Distance", value=race.get("distance", "—"), inline=True)
@@ -1854,7 +2373,11 @@ def build_compare_embed(
     data_b: dict,
     matchups: list[dict],
 ) -> list[discord.Embed]:
-    """Return a list of embeds: summary card + head-to-head history (if any)."""
+    """
+    Return a list of embeds: profile summary + career stats + form table + H2H detail.
+    Works for active, retired, and deceased horses — uses official Equibase career data
+    when available, so the stats card is never blank even with no recent races.
+    """
     sa = data_a["stats"]
     sb = data_b["stats"]
     name_a = data_a["name"]
@@ -1872,45 +2395,81 @@ def build_compare_embed(
         return ("✅" if a_wins else ("🔴" if b_wins else "🟡")), \
                ("✅" if b_wins else ("🔴" if a_wins else "🟡"))
 
-    # ── Summary embed ──
-    summary = discord.Embed(
+    # ── Profile card embed ──────────────────────────────────────────────────────
+    profile_embed = discord.Embed(
         title=f"⚔️ Head-to-Head: {name_a} vs {name_b}",
         color=discord.Color.purple(),
         timestamp=datetime.now(timezone.utc),
     )
 
-    # Overall record
+    def _profile_block(data: dict) -> str:
+        lines = []
+        if data.get("dob") and data["dob"] != "—":
+            lines.append(f"📅 Born: **{data['dob']}**")
+        if data.get("color") and data["color"] != "—":
+            sex_color = data["color"]
+            if data.get("sex") and data["sex"] != "—":
+                sex_color += f" {data['sex']}"
+            lines.append(f"🎨 {sex_color}")
+        if data.get("sire") and data["sire"] != "—":
+            lines.append(f"🧬 Sire: **{data['sire']}**")
+        if data.get("dam") and data["dam"] != "—":
+            lines.append(f"🐴 Dam: **{data['dam']}**")
+        if data.get("trainer") and data["trainer"] != "—":
+            lines.append(f"🎩 Trainer: {data['trainer']}")
+        if data.get("owner") and data["owner"] != "—":
+            lines.append(f"👑 Owner: {data['owner']}")
+        if data.get("earnings") and data["earnings"] != "—":
+            lines.append(f"💰 Career earnings: **{data['earnings']}**")
+        return "\n".join(lines) if lines else "*(no profile data available)*"
+
+    profile_embed.add_field(name=f"📄 {name_a}", value=_profile_block(data_a), inline=True)
+    profile_embed.add_field(name=f"📄 {name_b}", value=_profile_block(data_b), inline=True)
+
+    profile_links = []
+    if data_a.get("url"):
+        profile_links.append(f"[{name_a} on Equibase]({data_a['url']})")
+    if data_b.get("url"):
+        profile_links.append(f"[{name_b} on Equibase]({data_b['url']})")
+    if profile_links:
+        profile_embed.add_field(name="🔗 Full Profiles", value=" · ".join(profile_links), inline=False)
+    profile_embed.set_footer(text="Career stats sourced from Equibase — includes retired and deceased horses")
+
+    # ── Career stats embed ──────────────────────────────────────────────────────
+    stats_embed = discord.Embed(
+        title=f"📊 Career Statistics",
+        color=discord.Color.purple(),
+    )
+
     m_a, m_b = winner_marker(sa["win_pct"], sb["win_pct"])
-    summary.add_field(
+    stats_embed.add_field(
         name=f"🏇 {name_a}",
         value=(
             f"Starts: **{sa['total']}**\n"
             f"Wins: **{sa['wins']}** ({sa['win_pct']}%) {m_a}\n"
             f"Top-2: **{sa['places']}** ({sa['place_pct']}%)\n"
             f"Top-3: **{sa['shows']}** ({sa.get('show_pct', 0.0)}%)\n"
-            f"Avg finish: **{sa['avg_finish'] or '—'}**\n"
             f"{bar(sa['win_pct'])} win rate"
         ),
         inline=True,
     )
-    summary.add_field(
+    stats_embed.add_field(
         name=f"🏇 {name_b}",
         value=(
             f"Starts: **{sb['total']}**\n"
             f"Wins: **{sb['wins']}** ({sb['win_pct']}%) {m_b}\n"
             f"Top-2: **{sb['places']}** ({sb['place_pct']}%)\n"
             f"Top-3: **{sb['shows']}** ({sb.get('show_pct', 0.0)}%)\n"
-            f"Avg finish: **{sb['avg_finish'] or '—'}**\n"
             f"{bar(sb['win_pct'])} win rate"
         ),
         inline=True,
     )
 
-    # H2H record from direct matchups
+    # Direct meetings summary in stats embed
     if matchups:
         a_h2h_wins = sum(1 for m in matchups if m["winner"] == name_a)
         b_h2h_wins = sum(1 for m in matchups if m["winner"] == name_b)
-        summary.add_field(
+        stats_embed.add_field(
             name=f"🥊 Direct Meetings ({len(matchups)} race{'s' if len(matchups) != 1 else ''})",
             value=(
                 f"**{name_a}** won {a_h2h_wins}  |  "
@@ -1919,54 +2478,46 @@ def build_compare_embed(
             inline=False,
         )
     else:
-        summary.add_field(
+        stats_embed.add_field(
             name="🥊 Direct Meetings",
-            value="No shared races found in recent history.",
+            value="No shared races found in available history.",
             inline=False,
         )
 
-    profile_links = []
-    if data_a.get("url"):
-        profile_links.append(f"[{name_a} profile]({data_a['url']})")
-    if data_b.get("url"):
-        profile_links.append(f"[{name_b} profile]({data_b['url']})")
-    if profile_links:
-        summary.add_field(name="🔗 Profiles", value=" · ".join(profile_links), inline=False)
+    embeds = [profile_embed, stats_embed]
 
-    summary.set_footer(text="Data sourced from Equibase / Racing Post")
-    embeds = [summary]
-
-    # ── Recent form tables ──
-    def recent_form_embed(data: dict) -> discord.Embed:
+    # ── Recent form tables (only if races are available) ────────────────────────
+    def recent_form_embed(data: dict) -> discord.Embed | None:
+        races = data.get("races", [])
+        if not races:
+            return None
         embed = discord.Embed(
             title=f"📋 Recent Form — {data['name']}",
             color=discord.Color.blurple(),
         )
-        if not data["races"]:
-            embed.description = "No recent race history found."
-            return embed
         lines = ["`Date       ` `Track     ` `Fin` `Distance ` `Class    `"]
         lines.append("─" * 62)
-        for r in data["races"][:10]:
-            fin = r["finish"]
+        for r in races[:10]:
+            fin = r.get("finish", "—")
             marker = "🥇" if fin in ("1", "1st") else ("🥈" if fin in ("2", "2nd") else ("🥉" if fin in ("3", "3rd") else "  "))
             lines.append(
-                f"`{r['date'][:10]:<10}` "
-                f"`{r['track'][:10]:<10}` "
-                f"`{fin[:3]:<3}` {marker} "
-                f"`{r['distance'][:8]:<8}` "
-                f"`{r['class'][:9]:<9}`"
+                f"`{str(r.get('date', '—'))[:10]:<10}` "
+                f"`{str(r.get('track', '—'))[:10]:<10}` "
+                f"`{str(fin)[:3]:<3}` {marker} "
+                f"`{str(r.get('distance', '—'))[:8]:<8}` "
+                f"`{str(r.get('class', '—'))[:9]:<9}`"
             )
         embed.description = "\n".join(lines)
         return embed
 
-    embeds.append(recent_form_embed(data_a))
-    embeds.append(recent_form_embed(data_b))
+    for fe in (recent_form_embed(data_a), recent_form_embed(data_b)):
+        if fe:
+            embeds.append(fe)
 
-    # ── Head-to-head matchup detail ──
+    # ── Head-to-head matchup detail ─────────────────────────────────────────────
     if matchups:
         h2h_embed = discord.Embed(
-            title=f"🏁 Direct Matchup Results",
+            title="🏁 Direct Matchup Results",
             color=discord.Color.orange(),
         )
         lines = []
@@ -2283,8 +2834,96 @@ async def cmd_g1(
         )
         return
 
-    embeds = [build_g1_embed(r) for r in matches[:5]]
+    embeds = [build_g1_embed(r, grade="G1") for r in matches[:5]]
     await interaction.followup.send(embeds=embeds)
+
+
+@tree.command(name="g2", description="Show details and countdown for Grade 2 races")
+@app_commands.describe(
+    name="Partial name of the G2 race (leave blank to list upcoming by country)",
+    country="Filter by country",
+)
+@app_commands.choices(country=COUNTRY_CHOICES)
+async def cmd_g2(
+    interaction: discord.Interaction,
+    name: str = "",
+    country: app_commands.Choice[str] = None,
+):
+    await interaction.response.defer()
+    country_val = country.value if country else "all"
+
+    pool = KNOWN_G2_RACES
+    if country_val != "all":
+        pool = [r for r in pool if r["country"].lower() == country_val.lower()]
+
+    if name:
+        query = name.lower()
+        matches = [r for r in pool if query in r["name"].lower()]
+    else:
+        now = datetime.now(timezone.utc)
+        matches = sorted([r for r in pool if r["date"] > now], key=lambda r: r["date"])[:5]
+
+    if not matches:
+        country_hint = f" in **{country.name}**" if country and country_val != "all" else ""
+        await interaction.followup.send(
+            f"No G2 race found matching **{name or '(any)'}**{country_hint}.\n"
+            "Try `/upcoming` or check the race name spelling."
+        )
+        return
+
+    embeds = [build_g1_embed(r, grade="G2") for r in matches[:5]]
+    await interaction.followup.send(embeds=embeds)
+
+    # If a specific race was searched by name, also pull news for it
+    if name and matches:
+        race_name = matches[0]["name"]
+        news = await fetch_horse_news(f"{race_name} horse racing G2")
+        if news:
+            await interaction.followup.send(embed=build_news_embed(race_name, news[:4]))
+
+
+@tree.command(name="g3", description="Show details and countdown for Grade 3 races")
+@app_commands.describe(
+    name="Partial name of the G3 race (leave blank to list upcoming by country)",
+    country="Filter by country",
+)
+@app_commands.choices(country=COUNTRY_CHOICES)
+async def cmd_g3(
+    interaction: discord.Interaction,
+    name: str = "",
+    country: app_commands.Choice[str] = None,
+):
+    await interaction.response.defer()
+    country_val = country.value if country else "all"
+
+    pool = KNOWN_G3_RACES
+    if country_val != "all":
+        pool = [r for r in pool if r["country"].lower() == country_val.lower()]
+
+    if name:
+        query = name.lower()
+        matches = [r for r in pool if query in r["name"].lower()]
+    else:
+        now = datetime.now(timezone.utc)
+        matches = sorted([r for r in pool if r["date"] > now], key=lambda r: r["date"])[:5]
+
+    if not matches:
+        country_hint = f" in **{country.name}**" if country and country_val != "all" else ""
+        await interaction.followup.send(
+            f"No G3 race found matching **{name or '(any)'}**{country_hint}.\n"
+            "Try `/upcoming` or check the race name spelling."
+        )
+        return
+
+    embeds = [build_g1_embed(r, grade="G3") for r in matches[:5]]
+    await interaction.followup.send(embeds=embeds)
+
+    # If a specific race was searched by name, also pull news for it
+    if name and matches:
+        race_name = matches[0]["name"]
+        news = await fetch_horse_news(f"{race_name} horse racing G3")
+        if news:
+            await interaction.followup.send(embed=build_news_embed(race_name, news[:4]))
 
 
 @tree.command(name="runners", description="Show horses, jockeys and trainers for a race")
@@ -2406,17 +3045,20 @@ async def cmd_compare(
     source = source.lower().strip()
 
     await interaction.followup.send(
-        f"⏳ Fetching race history for **{horse_a}** and **{horse_b}** from **{source}**… "
-        "This may take a few seconds."
+        f"⏳ Searching Equibase for **{horse_a}** and **{horse_b}**…\n"
+        "This works for active, retired, and deceased horses. May take a few seconds."
     )
 
-    fetch_fn = (
-        fetch_horse_history_equibase
-        if source == "equibase"
-        else fetch_horse_history_racingpost
+    # Always use the full Equibase profile (fetch_horse_equibase) rather than
+    # the history-only scraper — the profile page carries official career stats
+    # even for retired/deceased horses that have no recent entries.
+    raw_a, raw_b = await asyncio.gather(
+        fetch_horse_equibase(horse_a),
+        fetch_horse_equibase(horse_b),
     )
 
-    data_a, data_b = await asyncio.gather(fetch_fn(horse_a), fetch_fn(horse_b))
+    data_a = _profile_to_compare_data(raw_a)
+    data_b = _profile_to_compare_data(raw_b)
     matchups = _find_head_to_head(data_a, data_b)
 
     embeds = build_compare_embed(data_a, data_b, matchups)
@@ -2712,10 +3354,14 @@ async def cmd_help(interaction: discord.Interaction):
     embed.add_field(
         name="📅  Race Discovery",
         value=(
-            "`/upcoming` — G1 races in the **next 7 days** · optional `country:` dropdown to filter by country\n"
-            "`/g1` — Details + countdown for a race · use `country:` dropdown to browse by country, or `name:` to search\n"
-            "`/countdown name:<race>` — Self-updating Discord timer · optional `country:` to narrow the search\n\n"
-            "**Country choices:** 🌍 All · 🇺🇸 USA · 🇬🇧 UK/Ireland · 🇫🇷 France · 🇯🇵 Japan · 🇦🇺 Australia · 🇦🇪 UAE"
+            "`/upcoming` — G1 races in the **next 7 days** · optional `country:` dropdown to filter\n"
+            "`/g1` — Grade 1 details + countdown · browse by `country:` or search by `name:`\n"
+            "`/g2` — Grade 2 details + countdown + race news · same `country:` / `name:` filters\n"
+            "`/g3` — Grade 3 details + countdown + race news · same `country:` / `name:` filters\n"
+            "`/countdown name:<race>` — Self-updating Discord timer · optional `country:` filter\n\n"
+            "**Countries:** 🌍 All · 🇺🇸 USA · 🇬🇧 UK · 🇮🇪 Ireland · 🇫🇷 France · 🇯🇵 Japan · "
+            "🇦🇺 Australia · 🇦🇪 UAE · 🇭🇰 Hong Kong · 🇨🇦 Canada · 🇩🇪 Germany · "
+            "🇸🇬 Singapore · 🇮🇹 Italy · 🇸🇦 Saudi Arabia · 🇿🇦 South Africa · 🇦🇷 Argentina"
         ),
         inline=False,
     )
@@ -2737,7 +3383,8 @@ async def cmd_help(interaction: discord.Interaction):
             "`/horse name:<name>` — Full profile from Equibase: bloodline, career record, recent races + news\n"
             "`/trainer name:<name>` — Trainer stats from Racing Post: win rate, notable wins, recent winners\n"
             "`/jockey name:<name>` — Jockey stats from Racing Post: win rate, career wins, recent winners\n"
-            "`/compare horse_a:<name> horse_b:<name>` — Head-to-head stats + every race they've met in\n"
+            "`/compare horse_a:<name> horse_b:<name>` — Full head-to-head: bloodline, career record, direct meetings\n"
+            "  ↳ Works for **active, retired, and deceased** horses — pulls career stats directly from Equibase\n"
             "`/news query:<term>` — Latest horse racing news from Google News (default: G1 racing)"
         ),
         inline=False,
@@ -2748,8 +3395,8 @@ async def cmd_help(interaction: discord.Interaction):
         value=(
             "`/umamusume name:<horse>` — Look up a horse's Umamusume character: personality, story arc, fun facts\n"
             "`/umamusume name:<horse> question:<q>` — Ask a lore question about the character\n\n"
-            "**Auto-indicator:** `/horse` will automatically show a 🌸 teaser card if that horse has an Uma Musume counterpart\n"
-            f"Supported horses include: Special Week, Silence Suzuka, Tokai Teio, Gold Ship, Oguri Cap, El Condor Pasa, and {len(UMAMUSUME_DATA) - 6} more"
+            "**Auto-indicator:** `/horse` automatically shows a 🌸 teaser card if an Uma Musume counterpart exists\n"
+            f"Supported: Special Week, Silence Suzuka, Tokai Teio, Gold Ship, Oguri Cap, El Condor Pasa, and {len(UMAMUSUME_DATA) - 6} more"
         ),
         inline=False,
     )

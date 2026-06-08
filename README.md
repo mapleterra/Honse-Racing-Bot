@@ -1,28 +1,28 @@
-# 🏇 Honse Racing Discord Bot
+# 🏇 Horse Racing Discord Bot
 
-A Discord bot that brings real-world horse racing data straight to your server — upcoming G1 race countdowns, race cards, live odds, official results, trainer and jockey stats, auto result notifications, and an Umamusume: Pretty Derby crossover feature.
+A Discord bot that brings real-world horse racing data straight to your server — Grade 1, 2, and 3 race countdowns, race cards, live odds, official results, trainer and jockey stats, head-to-head comparisons (including retired and deceased horses), auto result notifications, and an Umamusume: Pretty Derby crossover feature.
 
 ---
 
 ## Features
 
-- **Upcoming G1 races** — lists races in the next 7 days with live Discord countdowns, filtered by country
+- **G1, G2 & G3 race schedules** — upcoming races with live Discord countdowns and country filtering
 - **Race cards** — full list of runners, jockeys, and trainers from Equibase (US) or Racing Post (UK/IRE)
 - **Odds** — morning-line odds (Equibase), forecast odds (Racing Post), or multi-bookie comparison (OddsChecker)
 - **Official results** — finishing order and payouts from Equibase or Racing Post
 - **Horse profiles** — career stats, bloodline, and recent race history from Equibase
 - **Trainer & jockey stats** — win rates, career wins, and notable wins from Racing Post
-- **Head-to-head compare** — side-by-side career stats for two horses with shared race history
-- **News search** — latest horse racing articles from Google News
+- **Head-to-head compare** — works for any two horses, including retired and deceased — pulls official career stats directly from Equibase
+- **News search** — latest horse racing articles from Google News, including per-race news built into `/g2` and `/g3`
 - **Result subscriptions** — react 🔔 on any race card or use `/subscribe` to get pinged when results post
 - **Auto-posts** — daily G1 countdown, race-day alerts (24h/6h/1h), hourly news, and auto result posting
 - **Umamusume: Pretty Derby** — character profiles, story lore, and Q&A for horses that appear in the game
 
 ### Country filtering
 
-`/upcoming`, `/g1`, `/countdown`, and `/subscribe` all have a `country:` dropdown with:
+`/upcoming`, `/g1`, `/g2`, `/g3`, `/countdown`, and `/subscribe` all have a `country:` dropdown covering 16 nations:
 
-🌍 All Countries · 🇺🇸 USA · 🇬🇧 UK / Ireland · 🇫🇷 France · 🇯🇵 Japan · 🇦🇺 Australia · 🇦🇪 UAE
+🌍 All · 🇺🇸 USA · 🇬🇧 UK · 🇮🇪 Ireland · 🇫🇷 France · 🇯🇵 Japan · 🇦🇺 Australia · 🇦🇪 UAE · 🇭🇰 Hong Kong · 🇨🇦 Canada · 🇩🇪 Germany · 🇸🇬 Singapore · 🇮🇹 Italy · 🇸🇦 Saudi Arabia · 🇿🇦 South Africa · 🇦🇷 Argentina
 
 ---
 
@@ -32,7 +32,9 @@ A Discord bot that brings real-world horse racing data straight to your server �
 | Command | What it does |
 |---|---|
 | `/upcoming` | G1 races in the next 7 days — optional `country:` filter |
-| `/g1` | Details + countdown for a specific race — optional `country:` filter |
+| `/g1` | Details + countdown for a G1 race — optional `country:` and `name:` filters |
+| `/g2` | Details + countdown for a G2 race — optional `country:` and `name:` filters — auto-fetches news when searching by name |
+| `/g3` | Details + countdown for a G3 race — optional `country:` and `name:` filters — auto-fetches news when searching by name |
 | `/countdown` | Self-updating Discord timer for a race — optional `country:` filter |
 
 ### Race Day
@@ -48,7 +50,7 @@ A Discord bot that brings real-world horse racing data straight to your server �
 | `/horse` | Full horse profile from Equibase — auto-shows Umamusume card if applicable |
 | `/trainer` | Trainer stats from Racing Post |
 | `/jockey` | Jockey stats from Racing Post |
-| `/compare` | Head-to-head career stats between two horses |
+| `/compare` | Full head-to-head: bloodline, career record, direct meetings — works for active, retired & deceased horses |
 | `/news` | Latest horse racing news from Google News |
 
 ### Umamusume: Pretty Derby
@@ -71,6 +73,29 @@ A Discord bot that brings real-world horse racing data straight to your server �
 
 ---
 
+## `/compare` — Works for Any Horse
+
+`/compare` uses the full Equibase horse profile rather than only recent race entries. This means it shows official career statistics (starts, wins, places, shows, earnings, bloodline, trainer, owner) even for horses that are:
+
+- **Retired** — no longer racing but still in Equibase's records
+- **Deceased** — Equibase keeps career stats permanently
+- **Older legends** — horses from decades ago with no recent form data
+
+Each comparison shows:
+1. **Profile card** — bloodline, born, colour/sex, trainer, owner, career earnings, links
+2. **Career stats card** — starts/wins/places/shows, win % bar graph, direct meeting tally
+3. **Recent form table** — last 10 races (when available)
+4. **Direct matchup detail** — every race where both horses ran on the same day and track
+5. **News** — latest articles for each horse
+
+---
+
+## G2 and G3 Race Lists
+
+The bot includes built-in schedules for **Grade 2** and **Grade 3** races across all supported countries, covering around 35+ races per grade. Dates update each season — see `GUIDE.md` for how to add or update races.
+
+---
+
 ## Umamusume: Pretty Derby Integration
 
 The bot includes a built-in database of 21 characters from **Umamusume: Pretty Derby** (by Cygames), matched to their real racehorse counterparts.
@@ -80,7 +105,7 @@ The bot includes a built-in database of 21 characters from **Umamusume: Pretty D
 - Add `question:` to ask about specific lore topics (e.g. *"Who is her rival?"*, *"What happened to her?"*)
 - When you look up a horse with `/horse`, a 🌸 teaser card automatically appears if that horse has an Umamusume counterpart
 
-**Supported characters include:**
+**Supported characters:**
 
 | Real Horse | Character | Known For |
 |---|---|---|
@@ -110,13 +135,72 @@ More characters can be added to `UMAMUSUME_DATA` in `bot.py` at any time — see
 
 ---
 
+## Setup
+
+### Requirements
+
+- Python 3.10 or higher
+- A Discord bot token from the [Discord Developer Portal](https://discord.com/developers/applications)
+
+### Install dependencies
+
+```bash
+pip install discord.py aiohttp beautifulsoup4 feedparser python-dotenv
+```
+
+### Configure
+
+Create a `.env` file in this folder:
+
+```
+DISCORD_BOT_TOKEN=your_token_here
+G1_ALERTS_CHANNEL_ID=your_channel_id_here
+RACE_UPDATES_CHANNEL_ID=your_channel_id_here
+```
+
+### Run
+
+```bash
+python bot.py
+```
+
+The bot is online while this command is running. Press `Ctrl + C` to stop it.
+
+> **After any update to bot.py:** stop the bot, replace the file, and restart it. New slash commands register automatically on startup — allow 1–2 minutes for Discord to show them.
+
+---
+
+## Discord Developer Portal Settings
+
+In the [Developer Portal](https://discord.com/developers/applications), under your app's **Bot** page, make sure these are enabled:
+
+- ✅ **Server Members Intent**
+- ✅ **Message Content Intent**
+
+---
+
+## Customising Images
+
+Near the top of `bot.py` you'll find dictionaries where you can add your own image URLs:
+
+- `RACE_IMAGES` — banner image shown on each race embed (works for G1, G2, and G3 races)
+- `HORSE_IMAGES` — profile photo for `/horse` and `/compare` embeds
+- `TRAINER_IMAGES` — photo for `/trainer` embeds
+- `JOCKEY_IMAGES` — photo for `/jockey` embeds
+- `BOT_BANNER_URL` — default fallback banner for all embeds
+- `UMAMUSUME_DATA` entries each have an `"icon_url"` field for character thumbnails
+
+See `GUIDE.md` for full instructions on finding and hosting image URLs for free.
+
+---
+
 ## Data Sources
 
 All data is scraped from publicly available websites — no paid API keys required.
 
 | Source | Used for |
 |---|---|
-| [Equibase](https://www.equibase.com) | US race cards, results, horse profiles |
+| [Equibase](https://www.equibase.com) | US race cards, results, horse profiles, career stats (all horses including retired) |
 | [Racing Post](https://www.racingpost.com) | UK/IRE race cards, trainer/jockey stats |
 | [OddsChecker](https://www.oddschecker.com) | Multi-bookmaker odds comparison |
 | [Google News RSS](https://news.google.com) | Latest horse racing news articles |
